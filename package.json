@@ -30,7 +30,7 @@
     "framer-motion": "^11.3.0",
     "hono": "^4.4.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^2.5.2",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.555.0",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.3",
