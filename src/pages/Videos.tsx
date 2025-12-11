@@ -446,6 +446,8 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
 
   // Initial fetch with auto-refresh
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
@@ -465,61 +467,85 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
             limit: VIDEOS_PER_PAGE,
             offset: 0,
             search: debouncedSearch || undefined,
+            signal: abortController.signal,
           });
-          setVideos(response.videos);
-          setTotalVideos(response.total);
-          setHasMore(response.hasMore);
-          // Also fetch channel info for display
-          const channelData = await channelsApi.get(channelId);
-          setChannel(channelData);
+          if (!abortController.signal.aborted) {
+            setVideos(response.videos);
+            setTotalVideos(response.total);
+            setHasMore(response.hasMore);
+            // Also fetch channel info for display
+            const channelData = await channelsApi.get(channelId, abortController.signal);
+            setChannel(channelData);
+          }
         } else {
           const response = await videosApi.list({
             limit: VIDEOS_PER_PAGE,
             offset: 0,
             search: debouncedSearch || undefined,
+            signal: abortController.signal,
           });
-          setVideos(response.videos);
-          setTotalVideos(response.total);
-          setHasMore(response.hasMore);
-          setChannel(null);
+          if (!abortController.signal.aborted) {
+            setVideos(response.videos);
+            setTotalVideos(response.total);
+            setHasMore(response.hasMore);
+            setChannel(null);
+          }
         }
       } catch (err) {
-        console.error('Error fetching videos:', err);
-        setError('Impossible de charger les vidéos');
-        setVideos([]);
+        if (!abortController.signal.aborted) {
+          console.error('Error fetching videos:', err);
+          setError('Impossible de charger les vidéos');
+          setVideos([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      abortController.abort();
+    };
   }, [channelId, debouncedSearch]);
 
   // Fetch analyses for all videos
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchAnalyses = async () => {
       if (videos.length === 0) return;
 
       try {
         // Fetch all analyses
-        const response = await analysesApi.list({ limit: 1000 });
+        const response = await analysesApi.list({ limit: 1000, signal: abortController.signal });
 
-        // Group analyses by video_id
-        const analysesMap: Record<string, string[]> = {};
-        response.analyses.forEach((analysis) => {
-          if (!analysesMap[analysis.video_id]) {
-            analysesMap[analysis.video_id] = [];
-          }
-          analysesMap[analysis.video_id].push(analysis.type);
-        });
+        if (!abortController.signal.aborted) {
+          // Group analyses by video_id
+          const analysesMap: Record<string, string[]> = {};
+          response.analyses.forEach((analysis) => {
+            if (!analysesMap[analysis.video_id]) {
+              analysesMap[analysis.video_id] = [];
+            }
+            analysesMap[analysis.video_id].push(analysis.type);
+          });
 
-        setVideoAnalyses(analysesMap);
+          setVideoAnalyses(analysesMap);
+        }
       } catch (err) {
-        console.error('Error fetching analyses:', err);
+        if (!abortController.signal.aborted) {
+          console.error('Error fetching analyses:', err);
+        }
       }
     };
 
     fetchAnalyses();
+
+    return () => {
+      abortController.abort();
+    };
   }, [videos]);
 
   // Periodic auto-refresh every 10 minutes

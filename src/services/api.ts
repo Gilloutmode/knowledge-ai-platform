@@ -241,13 +241,13 @@ export const channelsApi = {
     return data.channel;
   },
 
-  list: async (): Promise<Channel[]> => {
-    const data = await request<{ channels: Channel[] }>('/channels');
+  list: async (signal?: AbortSignal): Promise<Channel[]> => {
+    const data = await request<{ channels: Channel[] }>('/channels', { signal });
     return data.channels;
   },
 
-  get: async (id: string): Promise<Channel> => {
-    const data = await request<{ channel: Channel }>(`/channels/${id}`);
+  get: async (id: string, signal?: AbortSignal): Promise<Channel> => {
+    const data = await request<{ channel: Channel }>(`/channels/${id}`, { signal });
     return data.channel;
   },
 
@@ -284,6 +284,7 @@ export interface PaginationParams {
   offset?: number;
   search?: string;
   channelId?: string;
+  signal?: AbortSignal;
 }
 
 export const videosApi = {
@@ -293,7 +294,10 @@ export const videosApi = {
     if (params?.offset) queryParams.set('offset', String(params.offset));
     if (params?.search) queryParams.set('search', params.search);
 
-    const data = await request<VideosResponse>(`/videos?${queryParams.toString()}`);
+    const data = await request<VideosResponse>(
+      `/videos?${queryParams.toString()}`,
+      { signal: params?.signal }
+    );
     return data;
   },
 
@@ -305,7 +309,10 @@ export const videosApi = {
     if (params?.channelId) queryParams.set('channelId', params.channelId);
 
     const query = queryParams.toString();
-    const data = await request<VideosResponse>(query ? `/videos?${query}` : '/videos');
+    const data = await request<VideosResponse>(
+      query ? `/videos?${query}` : '/videos',
+      { signal: params?.signal }
+    );
     return data;
   },
 
@@ -350,6 +357,7 @@ export const analysesApi = {
     type?: string;
     limit?: number;
     offset?: number;
+    signal?: AbortSignal;
   }): Promise<AnalysesResponse> => {
     const queryParams = new URLSearchParams();
     if (params?.type && params.type !== 'all') queryParams.set('type', params.type);
@@ -357,7 +365,10 @@ export const analysesApi = {
     if (params?.offset) queryParams.set('offset', String(params.offset));
 
     const query = queryParams.toString();
-    const data = await request<AnalysesResponse>(query ? `/analyses?${query}` : '/analyses');
+    const data = await request<AnalysesResponse>(
+      query ? `/analyses?${query}` : '/analyses',
+      { signal: params?.signal }
+    );
     return data;
   },
 

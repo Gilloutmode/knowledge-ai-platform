@@ -256,42 +256,57 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, searchQuery = 
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('week');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (signal?: AbortSignal) => {
     try {
       setIsLoading(true);
       const [channelsData, videosResponse, analysesResponse] = await Promise.all([
-        channelsApi.list(),
-        videosApi.list({ limit: 1000 }),
-        analysesApi.list({ limit: 1000 }),
+        channelsApi.list(signal),
+        videosApi.list({ limit: 1000, signal }),
+        analysesApi.list({ limit: 1000, signal }),
       ]);
 
-      setChannels(channelsData);
-      setVideos(videosResponse.videos);
-      setTotalVideos(videosResponse.total);
-      setAnalyses(analysesResponse.analyses);
-      setTotalAnalyses(analysesResponse.total);
-      setError(null);
+      if (!signal?.aborted) {
+        setChannels(channelsData);
+        setVideos(videosResponse.videos);
+        setTotalVideos(videosResponse.total);
+        setAnalyses(analysesResponse.analyses);
+        setTotalAnalyses(analysesResponse.total);
+        setError(null);
+      }
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError('Impossible de charger les données');
+      if (!signal?.aborted) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Impossible de charger les données');
+      }
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchData();
+    const abortController = new AbortController();
+    fetchData(abortController.signal);
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   // Auto-refresh when user returns to the tab
   useEffect(() => {
+    let abortController: AbortController | null = null;
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        fetchData();
+        abortController = new AbortController();
+        fetchData(abortController.signal);
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      abortController?.abort();
+    };
   }, []);
 
   // Calculate stats

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import ReactMarkdown from 'react-markdown';
 import {
   FileText,
@@ -753,6 +754,9 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   const [totalCount, setTotalCount] = useState(0);
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisWithVideo | null>(null);
 
+  // Ref for virtualized list container
+  const parentRef = useRef<HTMLDivElement>(null);
+
   // Advanced filters state
   const [filters, setFilters] = useState<FilterState>({
     search: searchQuery,
@@ -767,6 +771,8 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   }, []);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchAnalyses = async () => {
       setIsLoading(true);
       setError(null);
@@ -774,19 +780,30 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
         const response = await analysesApi.list({
           type: selectedType !== 'all' ? selectedType : undefined,
           limit: 100,
+          signal: abortController.signal,
         });
-        setAnalyses(response.analyses);
-        setTotalCount(response.total);
+        if (!abortController.signal.aborted) {
+          setAnalyses(response.analyses);
+          setTotalCount(response.total);
+        }
       } catch (err) {
-        console.error('Error fetching analyses:', err);
-        setError('Impossible de charger les analyses');
-        setAnalyses([]);
+        if (!abortController.signal.aborted) {
+          console.error('Error fetching analyses:', err);
+          setError('Impossible de charger les analyses');
+          setAnalyses([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchAnalyses();
+
+    return () => {
+      abortController.abort();
+    };
   }, [selectedType]);
 
   // Filter and sort analyses
@@ -825,6 +842,14 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   // Compute grouped data
   const groupedByVideo = useMemo(() => groupByVideo(filteredAnalyses), [filteredAnalyses]);
   const groupedByChannel = useMemo(() => groupByChannel(filteredAnalyses), [filteredAnalyses]);
+
+  // Virtualizer for list view - optimizes rendering of large lists
+  const rowVirtualizer = useVirtualizer({
+    count: filteredAnalyses.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100, // Estimated row height in pixels
+    overscan: 5, // Number of items to render outside visible area
+  });
 
   if (isLoading) {
     return (
@@ -981,16 +1006,42 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
       {/* Analyses Display */}
       {filteredAnalyses.length > 0 && (
         <>
-          {/* List View */}
+          {/* List View - Virtualized for performance */}
           {groupingMode === 'list' && (
-            <div className="space-y-3">
-              {filteredAnalyses.map((analysis) => (
-                <AnalysisCard
-                  key={analysis.id}
-                  analysis={analysis}
-                  onClick={() => setSelectedAnalysis(analysis)}
-                />
-              ))}
+            <div
+              ref={parentRef}
+              className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto"
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const analysis = filteredAnalyses[virtualRow.index];
+                  return (
+                    <div
+                      key={analysis.id}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className="pb-3"
+                    >
+                      <AnalysisCard
+                        analysis={analysis}
+                        onClick={() => setSelectedAnalysis(analysis)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

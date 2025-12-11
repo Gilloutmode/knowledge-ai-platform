@@ -319,22 +319,32 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const fetchChannels = async () => {
+  const fetchChannels = async (signal?: AbortSignal) => {
     try {
-      const data = await channelsApi.list();
-      setChannels(data);
-      setError(null);
+      const data = await channelsApi.list(signal);
+      if (!signal?.aborted) {
+        setChannels(data);
+        setError(null);
+      }
     } catch (err) {
-      setError('Impossible de charger les chaînes');
-      console.error('Error fetching channels:', err);
+      if (!signal?.aborted) {
+        setError('Impossible de charger les chaînes');
+        console.error('Error fetching channels:', err);
+      }
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchChannels();
+    const abortController = new AbortController();
+    fetchChannels(abortController.signal);
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const handleRefreshAll = async () => {

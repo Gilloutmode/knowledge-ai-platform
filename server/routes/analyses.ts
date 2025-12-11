@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { logger } from '../lib/logger';
 import { getSupabase } from '../lib/supabase';
 
 const analysesRouter = new Hono();
@@ -7,8 +8,8 @@ const analysesRouter = new Hono();
 analysesRouter.get('/', async (c) => {
   const videoId = c.req.query('videoId') || c.req.query('video_id');
   const type = c.req.query('type');
-  const limit = parseInt(c.req.query('limit') || '50');
-  const offset = parseInt(c.req.query('offset') || '0');
+  const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100); // Max 100
+  const offset = Math.max(parseInt(c.req.query('offset') || '0'), 0); // Min 0
 
   try {
     const supabase = getSupabase();
@@ -68,7 +69,7 @@ analysesRouter.get('/', async (c) => {
       hasMore: offset + limit < (totalCount || 0),
     });
   } catch (err) {
-    console.error('Error fetching analyses:', err);
+    logger.error({ err }, 'Error fetching analyses');
     return c.json({ error: 'Failed to fetch analyses' }, 500);
   }
 });
@@ -108,7 +109,7 @@ analysesRouter.get('/:id', async (c) => {
 
     return c.json({ analysis: data });
   } catch (err) {
-    console.error('Error fetching analysis:', err);
+    logger.error({ err }, 'Error fetching analysis');
     return c.json({ error: 'Failed to fetch analysis' }, 500);
   }
 });
