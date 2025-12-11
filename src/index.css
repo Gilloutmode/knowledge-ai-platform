@@ -1,0 +1,508 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Dark mode (default) */
+  body {
+    @apply bg-black text-white font-sans transition-colors duration-300;
+  }
+
+  /* Light mode */
+  :root:not(.dark) body,
+  .light body {
+    @apply bg-light-200 text-gray-900;
+  }
+
+  /* Scrollbar - Dark mode (default) */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-500 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-400;
+  }
+
+  /* Scrollbar - Light mode */
+  :root:not(.dark) ::-webkit-scrollbar-track,
+  .light ::-webkit-scrollbar-track {
+    @apply bg-light-300;
+  }
+
+  :root:not(.dark) ::-webkit-scrollbar-thumb,
+  .light ::-webkit-scrollbar-thumb {
+    @apply bg-light-500;
+  }
+
+  :root:not(.dark) ::-webkit-scrollbar-thumb:hover,
+  .light ::-webkit-scrollbar-thumb:hover {
+    @apply bg-light-600;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-lime-muted text-white;
+  }
+
+  :root:not(.dark) ::selection,
+  .light ::selection {
+    @apply bg-lime/30 text-gray-900;
+  }
+
+  /* Focus */
+  :focus-visible {
+    @apply outline-2 outline-lime outline-offset-2;
+  }
+}
+
+/* ============================================
+   COMPONENT STYLES
+   ============================================ */
+
+@layer components {
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.05];
+  }
+
+  .glass-lime {
+    @apply bg-lime/[0.05] border border-lime/10;
+  }
+
+  .glass-cyan {
+    @apply bg-cyan/[0.05] border border-cyan/10;
+  }
+
+  /* Cards - Dark mode (default) */
+  .card {
+    @apply bg-dark-800 border border-dark-border rounded-xl p-6 transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply border-dark-400;
+  }
+
+  .card-elevated {
+    @apply bg-dark-700 shadow-md;
+  }
+
+  /* Cards - Light mode */
+  :root:not(.dark) .card,
+  .light .card {
+    @apply bg-white border-light-border;
+  }
+
+  :root:not(.dark) .card:hover,
+  .light .card:hover {
+    @apply border-light-500;
+  }
+
+  :root:not(.dark) .card-elevated,
+  .light .card-elevated {
+    @apply bg-light-100 shadow-lg;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border-none cursor-pointer transition-all duration-200 whitespace-nowrap;
+  }
+
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-lime text-black hover:bg-lime-hover hover:shadow-lime-glow;
+  }
+
+  /* Secondary Button - Dark mode (default) */
+  .btn-secondary {
+    @apply bg-dark-600 text-white border border-dark-border hover:bg-dark-500 hover:border-dark-400;
+  }
+
+  /* Secondary Button - Light mode */
+  :root:not(.dark) .btn-secondary,
+  .light .btn-secondary {
+    @apply bg-light-300 text-gray-800 border-light-border hover:bg-light-400 hover:border-light-500;
+  }
+
+  /* Ghost Button - Dark mode (default) */
+  .btn-ghost {
+    @apply bg-transparent text-gray-300 hover:bg-dark-700 hover:text-white;
+  }
+
+  /* Ghost Button - Light mode */
+  :root:not(.dark) .btn-ghost,
+  .light .btn-ghost {
+    @apply text-gray-600 hover:bg-light-300 hover:text-gray-900;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-lg;
+  }
+
+  /* Inputs - Dark mode (default) */
+  .input {
+    @apply w-full px-4 py-3 text-sm text-white bg-dark-800 border border-dark-border rounded-xl transition-all duration-200;
+  }
+
+  .input::placeholder {
+    @apply text-gray-400;
+  }
+
+  .input:focus {
+    @apply outline-none border-lime ring-1 ring-lime/30;
+  }
+
+  /* Inputs - Light mode */
+  :root:not(.dark) .input,
+  .light .input {
+    @apply text-gray-900 bg-white border-light-border;
+  }
+
+  :root:not(.dark) .input::placeholder,
+  .light .input::placeholder {
+    @apply text-gray-500;
+  }
+
+  /* Badges - Dark mode (default) */
+  .badge {
+    @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-dark-600 text-gray-300;
+  }
+
+  /* Badges - Light mode */
+  :root:not(.dark) .badge,
+  .light .badge {
+    @apply bg-light-300 text-gray-600;
+  }
+
+  .badge-lime {
+    @apply bg-lime-muted text-lime;
+  }
+
+  /* Badge Lime - Light mode */
+  :root:not(.dark) .badge-lime,
+  .light .badge-lime {
+    @apply bg-lime-dark/15 text-lime-dark;
+  }
+
+  .badge-cyan {
+    @apply bg-cyan-muted text-cyan;
+  }
+
+  /* Badge Cyan - Light mode */
+  :root:not(.dark) .badge-cyan,
+  .light .badge-cyan {
+    @apply bg-cyan-dark/15 text-cyan-dark;
+  }
+
+  .badge-success {
+    @apply bg-green-500/15 text-green-500;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-500/15 text-yellow-500;
+  }
+
+  .badge-error {
+    @apply bg-red-500/15 text-red-500;
+  }
+
+  /* Text Gradient - Dark mode (default) */
+  .text-gradient-lime {
+    @apply bg-gradient-to-r from-lime to-cyan bg-clip-text text-transparent;
+  }
+
+  /* Text Gradient - Light mode (darker colors for better contrast) */
+  :root:not(.dark) .text-gradient-lime,
+  .light .text-gradient-lime {
+    @apply from-lime-dark to-cyan-dark;
+  }
+
+  /* Skeleton Loading - Dark mode (default) */
+  .skeleton {
+    @apply bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 bg-[length:200%_100%] animate-pulse rounded-md;
+  }
+
+  /* Skeleton Loading - Light mode */
+  :root:not(.dark) .skeleton,
+  .light .skeleton {
+    @apply from-light-300 via-light-400 to-light-300;
+  }
+}
+
+/* ============================================
+   UTILITY STYLES
+   ============================================ */
+
+@layer utilities {
+  /* Line Clamp */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Glow Effects */
+  .glow-lime {
+    @apply shadow-lime-glow;
+  }
+
+  .glow-cyan {
+    @apply shadow-cyan-glow;
+  }
+
+  /* Hide Scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  .scrollbar-thumb-lime\/20::-webkit-scrollbar-thumb {
+    @apply bg-lime/20 rounded-full;
+  }
+
+  .scrollbar-thumb-lime\/40:hover::-webkit-scrollbar-thumb {
+    @apply bg-lime/40;
+  }
+
+  .scrollbar-track-dark-700::-webkit-scrollbar-track {
+    @apply bg-dark-700 rounded-full;
+  }
+}
+
+/* ============================================
+   MARKDOWN CONTENT STYLES
+   ============================================ */
+
+/* Markdown Content - Dark mode (default) */
+.markdown-content {
+  @apply text-gray-100 leading-relaxed;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  @apply text-white font-semibold mt-8 mb-4;
+}
+
+.markdown-content h1 { @apply text-3xl; }
+.markdown-content h2 { @apply text-2xl; }
+.markdown-content h3 { @apply text-xl; }
+.markdown-content h4 { @apply text-lg; }
+
+.markdown-content p {
+  @apply mb-4;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  @apply mb-4 pl-6;
+}
+
+.markdown-content li {
+  @apply mb-2;
+}
+
+.markdown-content li::marker {
+  @apply text-lime;
+}
+
+.markdown-content code {
+  @apply font-mono text-sm px-1.5 py-0.5 bg-dark-700 rounded text-cyan;
+}
+
+.markdown-content pre {
+  @apply bg-dark-800 border border-dark-border rounded-xl p-4 overflow-x-auto mb-4;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-lime pl-4 my-4 text-gray-300 italic;
+}
+
+.markdown-content hr {
+  @apply border-none h-px bg-dark-border my-8;
+}
+
+.markdown-content table {
+  @apply w-full border-collapse mb-4;
+}
+
+.markdown-content th,
+.markdown-content td {
+  @apply p-3 border border-dark-border text-left;
+}
+
+.markdown-content th {
+  @apply bg-dark-700 font-semibold;
+}
+
+.markdown-content a {
+  @apply text-cyan underline underline-offset-2 hover:text-lime;
+}
+
+.markdown-content img {
+  @apply max-w-full rounded-xl;
+}
+
+/* Checkbox styling */
+.markdown-content input[type="checkbox"] {
+  @apply appearance-none w-[18px] h-[18px] border-2 border-dark-400 rounded mr-2 align-middle cursor-pointer transition-all;
+}
+
+.markdown-content input[type="checkbox"]:checked {
+  @apply bg-lime border-lime;
+}
+
+/* Markdown Content - Light mode */
+:root:not(.dark) .markdown-content,
+.light .markdown-content {
+  @apply text-gray-700;
+}
+
+:root:not(.dark) .markdown-content h1,
+:root:not(.dark) .markdown-content h2,
+:root:not(.dark) .markdown-content h3,
+:root:not(.dark) .markdown-content h4,
+.light .markdown-content h1,
+.light .markdown-content h2,
+.light .markdown-content h3,
+.light .markdown-content h4 {
+  @apply text-gray-900;
+}
+
+:root:not(.dark) .markdown-content code,
+.light .markdown-content code {
+  @apply bg-light-300 text-cyan;
+}
+
+:root:not(.dark) .markdown-content pre,
+.light .markdown-content pre {
+  @apply bg-light-100 border-light-border;
+}
+
+:root:not(.dark) .markdown-content blockquote,
+.light .markdown-content blockquote {
+  @apply text-gray-600;
+}
+
+:root:not(.dark) .markdown-content hr,
+.light .markdown-content hr {
+  @apply bg-light-border;
+}
+
+:root:not(.dark) .markdown-content th,
+:root:not(.dark) .markdown-content td,
+.light .markdown-content th,
+.light .markdown-content td {
+  @apply border-light-border;
+}
+
+:root:not(.dark) .markdown-content th,
+.light .markdown-content th {
+  @apply bg-light-200;
+}
+
+:root:not(.dark) .markdown-content input[type="checkbox"],
+.light .markdown-content input[type="checkbox"] {
+  @apply border-light-500;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
