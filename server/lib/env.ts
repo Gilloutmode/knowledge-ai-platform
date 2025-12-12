@@ -34,8 +34,8 @@ const envSchema = z.object({
   // Security
   ALLOW_DEMO_MODE: z
     .string()
-    .transform((val) => val === "true")
-    .default("false"),
+    .default("false")
+    .transform((val) => val === "true"),
   ALLOWED_ORIGINS: z.string().optional(),
 
   // Redis (optional - falls back to in-memory cache)

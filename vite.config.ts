@@ -1,12 +1,13 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
 
     server: {
       port: 3000,
@@ -38,9 +39,7 @@ export default defineConfig(({ mode }) => {
             'vendor-ui': ['framer-motion', 'lucide-react'],
             // Supabase
             'vendor-supabase': ['@supabase/supabase-js'],
-            // Utilities
-            'vendor-utils': ['date-fns', 'zod', 'dompurify'],
-            // Data/charts (if used)
+            // Data virtualization
             'vendor-data': ['@tanstack/react-virtual'],
           },
         },
