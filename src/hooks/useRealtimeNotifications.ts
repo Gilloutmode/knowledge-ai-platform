@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
-import { supabase, notificationsApi, Database } from '../lib/supabase';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { useEffect, useState, useCallback } from "react";
+import { supabase, notificationsApi, Database } from "../lib/supabase";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
-type Notification = Database['public']['Tables']['notifications']['Row'];
+type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
 interface UseRealtimeNotificationsReturn {
   notifications: Notification[];
@@ -27,11 +27,13 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
       const data = await notificationsApi.getAll();
       const notificationData = (data || []) as Notification[];
       setNotifications(notificationData);
-      setUnreadCount(notificationData.filter((n: Notification) => !n.read).length);
+      setUnreadCount(
+        notificationData.filter((n: Notification) => !n.read).length,
+      );
       setError(null);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError('Erreur lors du chargement des notifications');
+      console.error("Error fetching notifications:", err);
+      setError("Erreur lors du chargement des notifications");
     } finally {
       setLoading(false);
     }
@@ -42,11 +44,11 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
     try {
       await notificationsApi.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
-      console.error('Error marking notification as read:', err);
+      console.error("Error marking notification as read:", err);
     }
   }, []);
 
@@ -57,7 +59,7 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error('Error marking all notifications as read:', err);
+      console.error("Error marking all notifications as read:", err);
     }
   }, []);
 
@@ -67,13 +69,13 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
 
     // Subscribe to realtime changes on notifications table
     const channel: RealtimeChannel = supabase
-      .channel('notifications-changes')
+      .channel("notifications-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
         },
         (payload) => {
           const newNotification = payload.new as Notification;
@@ -83,21 +85,21 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
             // Show browser notification if permitted
             showBrowserNotification(newNotification);
           }
-        }
+        },
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
         },
         (payload) => {
           const updated = payload.new as Notification;
           setNotifications((prev) =>
-            prev.map((n) => (n.id === updated.id ? updated : n))
+            prev.map((n) => (n.id === updated.id ? updated : n)),
           );
-        }
+        },
       )
       .subscribe();
 
@@ -119,22 +121,24 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
 }
 
 // Also subscribe to analyses table for real-time analysis notifications
-export function useRealtimeAnalyses(onNewAnalysis?: (analysis: unknown) => void) {
+export function useRealtimeAnalyses(
+  onNewAnalysis?: (analysis: unknown) => void,
+) {
   useEffect(() => {
     const channel = supabase
-      .channel('analyses-changes')
+      .channel("analyses-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'analyses',
+          event: "INSERT",
+          schema: "public",
+          table: "analyses",
         },
         (payload) => {
           if (onNewAnalysis) {
             onNewAnalysis(payload.new);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -147,13 +151,13 @@ export function useRealtimeAnalyses(onNewAnalysis?: (analysis: unknown) => void)
 // Browser notification helper
 function showBrowserNotification(notification: Notification) {
   // Check if browser notifications are supported and permitted
-  if (!('Notification' in window)) return;
+  if (!("Notification" in window)) return;
 
-  if (Notification.permission === 'granted') {
+  if (Notification.permission === "granted") {
     createNotification(notification);
-  } else if (Notification.permission !== 'denied') {
+  } else if (Notification.permission !== "denied") {
     Notification.requestPermission().then((permission) => {
-      if (permission === 'granted') {
+      if (permission === "granted") {
         createNotification(notification);
       }
     });
@@ -162,14 +166,14 @@ function showBrowserNotification(notification: Notification) {
 
 function createNotification(notification: Notification) {
   const icons: Record<string, string> = {
-    new_video: '🎬',
-    analysis_ready: '📊',
-    content_ready: '✨',
+    new_video: "🎬",
+    analysis_ready: "📊",
+    content_ready: "✨",
   };
 
   new Notification(notification.title, {
     body: notification.message,
-    icon: icons[notification.type] || '🔔',
+    icon: icons[notification.type] || "🔔",
     tag: notification.id,
   });
 }

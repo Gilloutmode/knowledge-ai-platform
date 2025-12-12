@@ -1,4 +1,5 @@
-import { Context, Next } from 'hono';
+import { Context, Next } from "hono";
+import { logger } from "../lib/logger";
 
 /**
  * Simple in-memory rate limiting middleware
@@ -36,7 +37,9 @@ export function createRateLimit(options: RateLimitOptions) {
     // Generate key based on IP or custom function
     const key = keyGenerator
       ? keyGenerator(c)
-      : c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+      : c.req.header("x-forwarded-for") ||
+        c.req.header("x-real-ip") ||
+        "unknown";
 
     const now = Date.now();
     let entry = rateLimitStore.get(key);
@@ -56,20 +59,23 @@ export function createRateLimit(options: RateLimitOptions) {
     const remaining = Math.max(0, maxRequests - entry.count);
     const resetSeconds = Math.ceil((entry.resetTime - now) / 1000);
 
-    c.header('X-RateLimit-Limit', String(maxRequests));
-    c.header('X-RateLimit-Remaining', String(remaining));
-    c.header('X-RateLimit-Reset', String(resetSeconds));
+    c.header("X-RateLimit-Limit", String(maxRequests));
+    c.header("X-RateLimit-Remaining", String(remaining));
+    c.header("X-RateLimit-Reset", String(resetSeconds));
 
     // Check if limit exceeded
     if (entry.count > maxRequests) {
-      c.header('Retry-After', String(resetSeconds));
-      console.warn(`🔴 Rate limit exceeded for ${key}: ${entry.count}/${maxRequests}`);
+      c.header("Retry-After", String(resetSeconds));
+      logger.warn(
+        { key, count: entry.count, limit: maxRequests },
+        "Rate limit exceeded",
+      );
       return c.json(
         {
-          error: 'Too many requests',
+          error: "Too many requests",
           retryAfter: resetSeconds,
         },
-        429
+        429,
       );
     }
 

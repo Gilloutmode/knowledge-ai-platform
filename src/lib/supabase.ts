@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 // Database types for Supabase
 export interface Database {
@@ -8,7 +8,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          default_language: 'fr' | 'en';
+          default_language: "fr" | "en";
           email_notifications: boolean;
           auto_analyze_new_videos: boolean;
           default_report_types: string[];
@@ -16,10 +16,12 @@ export interface Database {
           updated_at: string;
         };
         Insert: Omit<
-          Database['public']['Tables']['user_preferences']['Row'],
-          'id' | 'created_at' | 'updated_at'
+          Database["public"]["Tables"]["user_preferences"]["Row"],
+          "id" | "created_at" | "updated_at"
         >;
-        Update: Partial<Database['public']['Tables']['user_preferences']['Insert']>;
+        Update: Partial<
+          Database["public"]["Tables"]["user_preferences"]["Insert"]
+        >;
       };
       channels: {
         Row: {
@@ -39,10 +41,10 @@ export interface Database {
           updated_at: string;
         };
         Insert: Omit<
-          Database['public']['Tables']['channels']['Row'],
-          'id' | 'created_at' | 'updated_at'
+          Database["public"]["Tables"]["channels"]["Row"],
+          "id" | "created_at" | "updated_at"
         >;
-        Update: Partial<Database['public']['Tables']['channels']['Insert']>;
+        Update: Partial<Database["public"]["Tables"]["channels"]["Insert"]>;
       };
       videos: {
         Row: {
@@ -56,28 +58,31 @@ export interface Database {
           view_count: number;
           like_count: number | null;
           published_at: string;
-          analysis_status: 'pending' | 'processing' | 'completed' | 'failed';
+          analysis_status: "pending" | "processing" | "completed" | "failed";
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<
-          Database['public']['Tables']['videos']['Row'],
-          'id' | 'created_at' | 'updated_at'
+          Database["public"]["Tables"]["videos"]["Row"],
+          "id" | "created_at" | "updated_at"
         >;
-        Update: Partial<Database['public']['Tables']['videos']['Insert']>;
+        Update: Partial<Database["public"]["Tables"]["videos"]["Insert"]>;
       };
       analyses: {
         Row: {
           id: string;
           video_id: string;
           type: string;
-          language: 'fr' | 'en';
+          language: "fr" | "en";
           content: string;
           metadata: Record<string, unknown> | null;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['analyses']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['analyses']['Insert']>;
+        Insert: Omit<
+          Database["public"]["Tables"]["analyses"]["Row"],
+          "id" | "created_at"
+        >;
+        Update: Partial<Database["public"]["Tables"]["analyses"]["Insert"]>;
       };
       generated_content: {
         Row: {
@@ -90,35 +95,42 @@ export interface Database {
           content: string;
           media_url: string | null;
           metadata: Record<string, unknown> | null;
-          status: 'draft' | 'ready' | 'published';
+          status: "draft" | "ready" | "published";
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<
-          Database['public']['Tables']['generated_content']['Row'],
-          'id' | 'created_at' | 'updated_at'
+          Database["public"]["Tables"]["generated_content"]["Row"],
+          "id" | "created_at" | "updated_at"
         >;
-        Update: Partial<Database['public']['Tables']['generated_content']['Insert']>;
+        Update: Partial<
+          Database["public"]["Tables"]["generated_content"]["Insert"]
+        >;
       };
       notifications: {
         Row: {
           id: string;
           user_id: string;
           video_id: string | null;
-          type: 'new_video' | 'analysis_ready' | 'content_ready';
+          type: "new_video" | "analysis_ready" | "content_ready";
           title: string;
           message: string;
           read: boolean;
           sent_at: string | null;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['notifications']['Insert']>;
+        Insert: Omit<
+          Database["public"]["Tables"]["notifications"]["Row"],
+          "id" | "created_at"
+        >;
+        Update: Partial<
+          Database["public"]["Tables"]["notifications"]["Insert"]
+        >;
       };
     };
     Views: {
       videos_with_stats: {
-        Row: Database['public']['Tables']['videos']['Row'] & {
+        Row: Database["public"]["Tables"]["videos"]["Row"] & {
           channel_name: string;
           channel_thumbnail: string | null;
           user_id: string;
@@ -127,7 +139,7 @@ export interface Database {
         };
       };
       channel_stats: {
-        Row: Database['public']['Tables']['channels']['Row'] & {
+        Row: Database["public"]["Tables"]["channels"]["Row"] & {
           analyzed_video_count: number;
           total_analyses: number;
           latest_video_date: string | null;
@@ -143,20 +155,20 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase environment variables not set. Running in demo mode.');
+  console.warn("Supabase environment variables not set. Running in demo mode.");
 }
 
 // Create Supabase client
 export const supabase = createClient<Database>(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-key",
   {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
     },
-  }
+  },
 );
 
 // Helper functions for common operations
@@ -165,16 +177,20 @@ export const supabase = createClient<Database>(
 export const channelsApi = {
   async getAll() {
     const { data, error } = await supabase
-      .from('channels')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("channels")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data;
   },
 
   async getById(id: string) {
-    const { data, error } = await supabase.from('channels').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+      .from("channels")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (error) throw error;
     return data;
@@ -182,23 +198,25 @@ export const channelsApi = {
 
   async getWithStats() {
     const { data, error } = await supabase
-      .from('channels')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("channels")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    return (data || []).map((c: Database['public']['Tables']['channels']['Row']) => ({
-      ...c,
-      analyzed_video_count: 0,
-      total_analyses: 0,
-      latest_video_date: null as string | null,
-    }));
+    return (data || []).map(
+      (c: Database["public"]["Tables"]["channels"]["Row"]) => ({
+        ...c,
+        analyzed_video_count: 0,
+        total_analyses: 0,
+        latest_video_date: null as string | null,
+      }),
+    );
   },
 
-  async create(channel: Database['public']['Tables']['channels']['Insert']) {
+  async create(channel: Database["public"]["Tables"]["channels"]["Insert"]) {
     const { data, error } = await supabase
-      .from('channels')
+      .from("channels")
       .insert(channel as never)
       .select()
       .single();
@@ -208,7 +226,7 @@ export const channelsApi = {
   },
 
   async delete(id: string) {
-    const { error } = await supabase.from('channels').delete().eq('id', id);
+    const { error } = await supabase.from("channels").delete().eq("id", id);
 
     if (error) throw error;
   },
@@ -218,8 +236,9 @@ export const channelsApi = {
 export const videosApi = {
   async getAll(channelId?: string) {
     let query = supabase
-      .from('videos')
-      .select(`
+      .from("videos")
+      .select(
+        `
         *,
         channels!inner (
           id,
@@ -227,18 +246,24 @@ export const videosApi = {
           thumbnail_url,
           user_id
         )
-      `)
-      .order('published_at', { ascending: false });
+      `,
+      )
+      .order("published_at", { ascending: false });
 
     if (channelId) {
-      query = query.eq('channel_id', channelId);
+      query = query.eq("channel_id", channelId);
     }
 
     const { data, error } = await query;
     if (error) throw error;
 
-    type VideoWithChannel = Database['public']['Tables']['videos']['Row'] & {
-      channels: { id: string; name: string; thumbnail_url: string | null; user_id: string } | null;
+    type VideoWithChannel = Database["public"]["Tables"]["videos"]["Row"] & {
+      channels: {
+        id: string;
+        name: string;
+        thumbnail_url: string | null;
+        user_id: string;
+      } | null;
     };
     return (data || []).map((v: VideoWithChannel) => ({
       ...v,
@@ -252,20 +277,23 @@ export const videosApi = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('videos')
-      .select('*, channels(*)')
-      .eq('id', id)
+      .from("videos")
+      .select("*, channels(*)")
+      .eq("id", id)
       .single();
 
     if (error) throw error;
     return data;
   },
 
-  async updateStatus(id: string, status: 'pending' | 'processing' | 'completed' | 'failed') {
+  async updateStatus(
+    id: string,
+    status: "pending" | "processing" | "completed" | "failed",
+  ) {
     const { error } = await supabase
-      .from('videos')
+      .from("videos")
       .update({ analysis_status: status } as never)
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
   },
@@ -275,10 +303,10 @@ export const videosApi = {
 export const analysesApi = {
   async getByVideoId(videoId: string) {
     const { data, error } = await supabase
-      .from('analyses')
-      .select('*')
-      .eq('video_id', videoId)
-      .order('created_at', { ascending: false });
+      .from("analyses")
+      .select("*")
+      .eq("video_id", videoId)
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data;
@@ -286,9 +314,9 @@ export const analysesApi = {
 
   async getAll() {
     const { data, error } = await supabase
-      .from('analyses')
-      .select('*, videos(title, thumbnail_url, channels(name))')
-      .order('created_at', { ascending: false });
+      .from("analyses")
+      .select("*, videos(title, thumbnail_url, channels(name))")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data;
@@ -299,9 +327,9 @@ export const analysesApi = {
 export const notificationsApi = {
   async getAll() {
     const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
       .limit(50);
 
     if (error) throw error;
@@ -310,9 +338,9 @@ export const notificationsApi = {
 
   async getUnreadCount() {
     const { count, error } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('read', false);
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("read", false);
 
     if (error) throw error;
     return count || 0;
@@ -320,18 +348,18 @@ export const notificationsApi = {
 
   async markAsRead(id: string) {
     const { error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .update({ read: true } as never)
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
   },
 
   async markAllAsRead() {
     const { error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .update({ read: true } as never)
-      .eq('read', false);
+      .eq("read", false);
 
     if (error) throw error;
   },

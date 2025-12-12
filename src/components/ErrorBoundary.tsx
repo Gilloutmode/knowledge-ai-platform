@@ -1,5 +1,5 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
 
     // Log error for debugging
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   handleGoHome = (): void => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   render(): ReactNode {
@@ -64,17 +64,21 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-8 h-8 text-red-500" />
             </div>
 
-            <h2 className="text-xl font-semibold text-white mb-2">Something went wrong</h2>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Something went wrong
+            </h2>
 
             <p className="text-gray-400 mb-6">
-              An unexpected error occurred. You can try refreshing the page or return to the home
-              page.
+              An unexpected error occurred. You can try refreshing the page or
+              return to the home page.
             </p>
 
             {/* Show error details in development */}
             {import.meta.env.DEV && this.state.error && (
               <div className="bg-dark-900 rounded-lg p-4 mb-6 text-left">
-                <p className="text-red-400 font-mono text-sm mb-2">{this.state.error.message}</p>
+                <p className="text-red-400 font-mono text-sm mb-2">
+                  {this.state.error.message}
+                </p>
                 {this.state.errorInfo && (
                   <pre className="text-gray-500 text-xs overflow-auto max-h-32">
                     {this.state.errorInfo.componentStack}
@@ -116,13 +120,18 @@ interface ErrorFallbackProps {
   resetErrorBoundary: () => void;
 }
 
-export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
+export function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: ErrorFallbackProps) {
   return (
     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h3 className="text-red-500 font-medium mb-1">Error loading content</h3>
+          <h3 className="text-red-500 font-medium mb-1">
+            Error loading content
+          </h3>
           <p className="text-gray-400 text-sm mb-3">{error.message}</p>
           <button
             onClick={resetErrorBoundary}
@@ -150,7 +159,10 @@ export function InlineError({ message, onRetry }: InlineErrorProps) {
       <AlertTriangle className="w-4 h-4" />
       <span>{message}</span>
       {onRetry && (
-        <button onClick={onRetry} className="dark:text-lime text-lime-dark dark:hover:text-lime/80 hover:text-lime-dark-hover ml-2">
+        <button
+          onClick={onRetry}
+          className="dark:text-lime text-lime-dark dark:hover:text-lime/80 hover:text-lime-dark-hover ml-2"
+        >
           Retry
         </button>
       )}

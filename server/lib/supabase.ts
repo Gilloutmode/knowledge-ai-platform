@@ -1,6 +1,6 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getEnv, isSupabaseConfigured } from './env';
-import { logger } from './logger';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getEnv, isSupabaseConfigured } from "./env";
+import { logger } from "./logger";
 
 // Lazy-initialized Supabase client
 let _supabase: SupabaseClient | null = null;
@@ -15,16 +15,17 @@ export function getSupabase(): SupabaseClient | null {
     _initialized = true;
 
     if (!isSupabaseConfigured()) {
-      logger.warn('Supabase not configured - database features disabled');
+      logger.warn("Supabase not configured - database features disabled");
       return null;
     }
 
     const env = getEnv();
     const supabaseUrl = env.VITE_SUPABASE_URL!;
-    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY!;
+    const supabaseKey =
+      env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY!;
 
     _supabase = createClient(supabaseUrl, supabaseKey);
-    logger.info('Supabase client initialized');
+    logger.info("Supabase client initialized");
   }
 
   return _supabase;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Filter,
@@ -9,11 +9,17 @@ import {
   ChevronDown,
   X,
   Youtube,
-} from 'lucide-react';
-import { Channel, channelsApi } from '../services/api';
+} from "lucide-react";
+import { Channel, channelsApi } from "../services/api";
 
-export type SortOption = 'date_desc' | 'date_asc' | 'title_asc' | 'title_desc' | 'views_desc' | 'views_asc';
-export type DateRange = 'all' | 'today' | 'week' | 'month' | 'year';
+export type SortOption =
+  | "date_desc"
+  | "date_asc"
+  | "title_asc"
+  | "title_desc"
+  | "views_desc"
+  | "views_asc";
+export type DateRange = "all" | "today" | "week" | "month" | "year";
 
 export interface FilterState {
   search: string;
@@ -31,20 +37,24 @@ interface AdvancedFiltersProps {
 }
 
 const DATE_RANGES: { value: DateRange; label: string }[] = [
-  { value: 'all', label: 'Toutes les dates' },
-  { value: 'today', label: "Aujourd'hui" },
-  { value: 'week', label: 'Cette semaine' },
-  { value: 'month', label: 'Ce mois' },
-  { value: 'year', label: 'Cette année' },
+  { value: "all", label: "Toutes les dates" },
+  { value: "today", label: "Aujourd'hui" },
+  { value: "week", label: "Cette semaine" },
+  { value: "month", label: "Ce mois" },
+  { value: "year", label: "Cette année" },
 ];
 
-const SORT_OPTIONS: { value: SortOption; label: string; icon: React.ReactNode }[] = [
-  { value: 'date_desc', label: 'Plus récent', icon: <SortDesc size={14} /> },
-  { value: 'date_asc', label: 'Plus ancien', icon: <SortAsc size={14} /> },
-  { value: 'title_asc', label: 'Titre A-Z', icon: <SortAsc size={14} /> },
-  { value: 'title_desc', label: 'Titre Z-A', icon: <SortDesc size={14} /> },
-  { value: 'views_desc', label: 'Plus vues', icon: <SortDesc size={14} /> },
-  { value: 'views_asc', label: 'Moins vues', icon: <SortAsc size={14} /> },
+const SORT_OPTIONS: {
+  value: SortOption;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
+  { value: "date_desc", label: "Plus récent", icon: <SortDesc size={14} /> },
+  { value: "date_asc", label: "Plus ancien", icon: <SortAsc size={14} /> },
+  { value: "title_asc", label: "Titre A-Z", icon: <SortAsc size={14} /> },
+  { value: "title_desc", label: "Titre Z-A", icon: <SortDesc size={14} /> },
+  { value: "views_desc", label: "Plus vues", icon: <SortDesc size={14} /> },
+  { value: "views_asc", label: "Moins vues", icon: <SortAsc size={14} /> },
 ];
 
 export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
@@ -52,7 +62,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   onFiltersChange,
   showChannelFilter = true,
   showViewsSort = true,
-  placeholder = 'Rechercher...',
+  placeholder = "Rechercher...",
 }) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [showChannelDropdown, setShowChannelDropdown] = useState(false);
@@ -72,7 +82,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           const channels = await channelsApi.list();
           setChannels(channels);
         } catch (err) {
-          console.error('Error fetching channels:', err);
+          console.error("Error fetching channels:", err);
         }
       };
       fetchChannels();
@@ -92,7 +102,10 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (channelRef.current && !channelRef.current.contains(e.target as Node)) {
+      if (
+        channelRef.current &&
+        !channelRef.current.contains(e.target as Node)
+      ) {
         setShowChannelDropdown(false);
       }
       if (dateRef.current && !dateRef.current.contains(e.target as Node)) {
@@ -102,28 +115,32 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         setShowSortDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const selectedChannel = channels.find((c) => c.id === filters.channelId);
-  const selectedDateRange = DATE_RANGES.find((d) => d.value === filters.dateRange);
+  const selectedDateRange = DATE_RANGES.find(
+    (d) => d.value === filters.dateRange,
+  );
   const selectedSort = SORT_OPTIONS.find((s) => s.value === filters.sortBy);
 
   const filteredSortOptions = showViewsSort
     ? SORT_OPTIONS
-    : SORT_OPTIONS.filter((s) => !s.value.includes('views'));
+    : SORT_OPTIONS.filter((s) => !s.value.includes("views"));
 
   const hasActiveFilters =
-    filters.channelId || filters.dateRange !== 'all' || filters.sortBy !== 'date_desc';
+    filters.channelId ||
+    filters.dateRange !== "all" ||
+    filters.sortBy !== "date_desc";
 
   const clearAllFilters = () => {
-    setLocalSearch('');
+    setLocalSearch("");
     onFiltersChange({
-      search: '',
+      search: "",
       channelId: null,
-      dateRange: 'all',
-      sortBy: 'date_desc',
+      dateRange: "all",
+      sortBy: "date_desc",
     });
   };
 
@@ -146,7 +163,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           />
           {localSearch && (
             <button
-              onClick={() => setLocalSearch('')}
+              onClick={() => setLocalSearch("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-light-300 dark:hover:bg-dark-600 rounded"
             >
               <X size={14} className="text-gray-500" />
@@ -163,17 +180,17 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                 onClick={() => setShowChannelDropdown(!showChannelDropdown)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
                   filters.channelId
-                    ? 'bg-lime/10 border-lime/30 text-lime-dark dark:text-lime'
-                    : 'dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-lime/30'
+                    ? "bg-lime/10 border-lime/30 text-lime-dark dark:text-lime"
+                    : "dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-lime/30"
                 }`}
               >
                 <Youtube size={16} />
                 <span className="text-sm font-medium max-w-[120px] truncate">
-                  {selectedChannel?.name || 'Chaîne'}
+                  {selectedChannel?.name || "Chaîne"}
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`transition-transform ${showChannelDropdown ? 'rotate-180' : ''}`}
+                  className={`transition-transform ${showChannelDropdown ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -193,12 +210,15 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                           !filters.channelId
-                            ? 'bg-lime/10 dark:text-lime text-lime-dark'
-                            : 'dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600'
+                            ? "bg-lime/10 dark:text-lime text-lime-dark"
+                            : "dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600"
                         }`}
                       >
                         <div className="w-8 h-8 rounded-full bg-light-300 dark:bg-dark-600 flex items-center justify-center">
-                          <Youtube size={16} className="dark:text-gray-400 text-gray-500" />
+                          <Youtube
+                            size={16}
+                            className="dark:text-gray-400 text-gray-500"
+                          />
                         </div>
                         <span className="font-medium">Toutes les chaînes</span>
                       </button>
@@ -207,25 +227,30 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                         <button
                           key={channel.id}
                           onClick={() => {
-                            onFiltersChange({ ...filters, channelId: channel.id });
+                            onFiltersChange({
+                              ...filters,
+                              channelId: channel.id,
+                            });
                             setShowChannelDropdown(false);
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                             filters.channelId === channel.id
-                              ? 'bg-lime/10 dark:text-lime text-lime-dark'
-                              : 'dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600'
+                              ? "bg-lime/10 dark:text-lime text-lime-dark"
+                              : "dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600"
                           }`}
                         >
                           <img
-                            src={channel.thumbnail_url || ''}
+                            src={channel.thumbnail_url || ""}
                             alt={channel.name}
                             className="w-8 h-8 rounded-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
-                                'https://via.placeholder.com/32/1a1a1a/666?text=YT';
+                                "https://via.placeholder.com/32/1a1a1a/666?text=YT";
                             }}
                           />
-                          <span className="font-medium truncate">{channel.name}</span>
+                          <span className="font-medium truncate">
+                            {channel.name}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -240,16 +265,18 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <button
               onClick={() => setShowDateDropdown(!showDateDropdown)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                filters.dateRange !== 'all'
-                  ? 'bg-cyan/10 border-cyan/30 text-cyan-dark dark:text-cyan'
-                  : 'dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-cyan/30'
+                filters.dateRange !== "all"
+                  ? "bg-cyan/10 border-cyan/30 text-cyan-dark dark:text-cyan"
+                  : "dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-cyan/30"
               }`}
             >
               <Calendar size={16} />
-              <span className="text-sm font-medium">{selectedDateRange?.label}</span>
+              <span className="text-sm font-medium">
+                {selectedDateRange?.label}
+              </span>
               <ChevronDown
                 size={14}
-                className={`transition-transform ${showDateDropdown ? 'rotate-180' : ''}`}
+                className={`transition-transform ${showDateDropdown ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -270,8 +297,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       }}
                       className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
                         filters.dateRange === range.value
-                          ? 'bg-cyan/10 dark:text-cyan text-cyan-dark'
-                          : 'dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600'
+                          ? "bg-cyan/10 dark:text-cyan text-cyan-dark"
+                          : "dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600"
                       }`}
                     >
                       {range.label}
@@ -287,16 +314,16 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <button
               onClick={() => setShowSortDropdown(!showSortDropdown)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-                filters.sortBy !== 'date_desc'
-                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400'
-                  : 'dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-purple-500/30'
+                filters.sortBy !== "date_desc"
+                  ? "bg-purple-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400"
+                  : "dark:bg-dark-700 bg-white dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 hover:border-purple-500/30"
               }`}
             >
               {selectedSort?.icon}
               <span className="text-sm font-medium">{selectedSort?.label}</span>
               <ChevronDown
                 size={14}
-                className={`transition-transform ${showSortDropdown ? 'rotate-180' : ''}`}
+                className={`transition-transform ${showSortDropdown ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -317,8 +344,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       }}
                       className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors ${
                         filters.sortBy === sort.value
-                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                          : 'dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600'
+                          ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                          : "dark:hover:bg-dark-700 hover:bg-light-200 dark:text-gray-300 text-gray-600"
                       }`}
                     >
                       {sort.icon}
@@ -336,7 +363,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       {hasActiveFilters && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           className="flex items-center gap-2 flex-wrap"
         >
@@ -348,7 +375,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           {filters.channelId && selectedChannel && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-lime/10 text-lime-dark dark:text-lime rounded-full text-xs">
               <img
-                src={selectedChannel.thumbnail_url || ''}
+                src={selectedChannel.thumbnail_url || ""}
                 alt=""
                 className="w-4 h-4 rounded-full"
               />
@@ -362,12 +389,14 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </span>
           )}
 
-          {filters.dateRange !== 'all' && (
+          {filters.dateRange !== "all" && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-cyan/10 text-cyan-dark dark:text-cyan rounded-full text-xs">
               <Calendar size={12} />
               {selectedDateRange?.label}
               <button
-                onClick={() => onFiltersChange({ ...filters, dateRange: 'all' })}
+                onClick={() =>
+                  onFiltersChange({ ...filters, dateRange: "all" })
+                }
                 className="ml-1 hover:text-cyan-dark/70 dark:hover:text-cyan/70"
               >
                 <X size={12} />
@@ -375,12 +404,14 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </span>
           )}
 
-          {filters.sortBy !== 'date_desc' && (
+          {filters.sortBy !== "date_desc" && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-xs">
               {selectedSort?.icon}
               {selectedSort?.label}
               <button
-                onClick={() => onFiltersChange({ ...filters, sortBy: 'date_desc' })}
+                onClick={() =>
+                  onFiltersChange({ ...filters, sortBy: "date_desc" })
+                }
                 className="ml-1 hover:text-purple-500/70"
               >
                 <X size={12} />
@@ -401,25 +432,27 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 };
 
 // Utility function to filter items by date range
-export function filterByDateRange<T extends { published_at?: string; created_at?: string }>(
+export function filterByDateRange<
+  T extends { published_at?: string; created_at?: string },
+>(
   items: T[],
   dateRange: DateRange,
-  dateField: 'published_at' | 'created_at' = 'published_at'
+  dateField: "published_at" | "created_at" = "published_at",
 ): T[] {
-  if (dateRange === 'all') return items;
+  if (dateRange === "all") return items;
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const getStartDate = (): Date => {
     switch (dateRange) {
-      case 'today':
+      case "today":
         return startOfDay;
-      case 'week':
+      case "week":
         return new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000);
-      case 'month':
+      case "month":
         return new Date(startOfDay.getFullYear(), startOfDay.getMonth(), 1);
-      case 'year':
+      case "year":
         return new Date(startOfDay.getFullYear(), 0, 1);
       default:
         return new Date(0);
@@ -443,31 +476,33 @@ export function sortItems<T>(
     date?: (item: T) => string;
     title?: (item: T) => string;
     views?: (item: T) => number;
-  }
+  },
 ): T[] {
   const sorted = [...items];
 
   sorted.sort((a, b) => {
     switch (sortBy) {
-      case 'date_desc':
+      case "date_desc":
         return getters.date
-          ? new Date(getters.date(b)).getTime() - new Date(getters.date(a)).getTime()
+          ? new Date(getters.date(b)).getTime() -
+              new Date(getters.date(a)).getTime()
           : 0;
-      case 'date_asc':
+      case "date_asc":
         return getters.date
-          ? new Date(getters.date(a)).getTime() - new Date(getters.date(b)).getTime()
+          ? new Date(getters.date(a)).getTime() -
+              new Date(getters.date(b)).getTime()
           : 0;
-      case 'title_asc':
+      case "title_asc":
         return getters.title
-          ? getters.title(a).localeCompare(getters.title(b), 'fr')
+          ? getters.title(a).localeCompare(getters.title(b), "fr")
           : 0;
-      case 'title_desc':
+      case "title_desc":
         return getters.title
-          ? getters.title(b).localeCompare(getters.title(a), 'fr')
+          ? getters.title(b).localeCompare(getters.title(a), "fr")
           : 0;
-      case 'views_desc':
+      case "views_desc":
         return getters.views ? getters.views(b) - getters.views(a) : 0;
-      case 'views_asc':
+      case "views_asc":
         return getters.views ? getters.views(a) - getters.views(b) : 0;
       default:
         return 0;

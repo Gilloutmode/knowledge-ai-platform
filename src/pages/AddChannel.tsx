@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Youtube,
   Link,
@@ -9,15 +9,17 @@ import {
   ArrowRight,
   Users,
   Video,
-} from 'lucide-react';
-import { channelsApi, ChannelPreview, ApiError } from '../services/api';
+} from "lucide-react";
+import { channelsApi, ChannelPreview, ApiError } from "../services/api";
 
 interface AddChannelPageProps {
   onSuccess: () => void;
 }
 
-export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => {
-  const [url, setUrl] = useState('');
+export const AddChannelPage: React.FC<AddChannelPageProps> = ({
+  onSuccess,
+}) => {
+  const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ChannelPreview | null>(null);
@@ -36,14 +38,14 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
-          setError('Cette chaîne est déjà dans votre bibliothèque.');
+          setError("Cette chaîne est déjà dans votre bibliothèque.");
         } else if (err.status === 404) {
           setError("Chaîne YouTube non trouvée. Vérifiez l'URL.");
         } else {
           setError(err.message);
         }
       } else {
-        setError('Une erreur est survenue. Veuillez réessayer.');
+        setError("Une erreur est survenue. Veuillez réessayer.");
       }
     } finally {
       setIsLoading(false);
@@ -76,7 +78,9 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
         <div className="inline-flex p-4 bg-lime-muted rounded-2xl mb-4">
           <Youtube size={32} className="dark:text-lime text-lime-dark" />
         </div>
-        <h1 className="text-2xl font-bold dark:text-white text-gray-900">Ajouter une chaîne YouTube</h1>
+        <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+          Ajouter une chaîne YouTube
+        </h1>
         <p className="dark:text-gray-400 text-gray-500 mt-2">
           Entrez l'URL d'une chaîne YouTube pour commencer à suivre ses vidéos
         </p>
@@ -84,17 +88,22 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
 
       {/* Input Section */}
       <div className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-2xl p-6">
-        <label className="block text-sm dark:text-gray-400 text-gray-500 mb-2">URL de la chaîne</label>
+        <label className="block text-sm dark:text-gray-400 text-gray-500 mb-2">
+          URL de la chaîne
+        </label>
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Link size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Link
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+            />
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://youtube.com/@channel ou https://youtube.com/c/channel"
               className="input pl-11"
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
           <button
@@ -102,7 +111,11 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
             disabled={!url.trim() || isLoading}
             className="btn btn-primary px-6"
           >
-            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+            {isLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Search size={18} />
+            )}
             Rechercher
           </button>
         </div>
@@ -146,8 +159,12 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
 
             {/* Info */}
             <div className="flex-1">
-              <h3 className="text-xl font-semibold dark:text-white text-gray-900">{preview.name}</h3>
-              <p className="dark:text-gray-400 text-gray-500 text-sm mt-1 line-clamp-2">{preview.description}</p>
+              <h3 className="text-xl font-semibold dark:text-white text-gray-900">
+                {preview.name}
+              </h3>
+              <p className="dark:text-gray-400 text-gray-500 text-sm mt-1 line-clamp-2">
+                {preview.description}
+              </p>
 
               <div className="flex items-center gap-6 mt-4 text-sm">
                 <span className="flex items-center gap-2 dark:text-gray-300 text-gray-600">
@@ -185,7 +202,9 @@ export const AddChannelPage: React.FC<AddChannelPageProps> = ({ onSuccess }) => 
 
       {/* Info Card */}
       <div className="bg-gradient-to-br from-cyan/10 to-lime/5 border border-cyan/20 rounded-2xl p-6">
-        <h3 className="dark:text-white text-gray-900 font-semibold mb-3">Ce qui va se passer</h3>
+        <h3 className="dark:text-white text-gray-900 font-semibold mb-3">
+          Ce qui va se passer
+        </h3>
         <ul className="space-y-2 dark:text-gray-400 text-gray-500 text-sm">
           <li className="flex items-start gap-2">
             <span className="dark:text-lime text-lime-dark">1.</span>

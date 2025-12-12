@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Youtube, Rss, FileText, Plus, Loader2, ChevronRight } from 'lucide-react';
-import { channelsApi } from '../services/api';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Youtube,
+  Rss,
+  FileText,
+  Plus,
+  Loader2,
+  ChevronRight,
+} from "lucide-react";
+import { channelsApi } from "../services/api";
 
 interface SourceStats {
   channels: number;
@@ -21,14 +28,17 @@ export function SourcesPage() {
     const fetchStats = async () => {
       try {
         const channels = await channelsApi.list();
-        const totalVideos = channels.reduce((acc, ch) => acc + (ch.video_count || 0), 0);
+        const totalVideos = channels.reduce(
+          (acc, ch) => acc + (ch.video_count || 0),
+          0,
+        );
         setYoutubeStats({
           channels: channels.length,
           videos: totalVideos,
           loading: false,
         });
       } catch (err) {
-        console.error('Failed to fetch YouTube stats:', err);
+        console.error("Failed to fetch YouTube stats:", err);
         setYoutubeStats((prev) => ({ ...prev, loading: false }));
       }
     };
@@ -40,13 +50,15 @@ export function SourcesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Sources</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+            Sources
+          </h1>
           <p className="dark:text-gray-400 text-gray-600 mt-1">
             Gérez vos sources de contenu : chaînes YouTube, flux RSS, documents
           </p>
         </div>
         <button
-          onClick={() => navigate('/add-source')}
+          onClick={() => navigate("/add-source")}
           className="btn btn-primary flex items-center gap-2"
         >
           <Plus size={18} />
@@ -58,7 +70,7 @@ export function SourcesPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* YouTube - Active & Clickable */}
         <button
-          onClick={() => navigate('/sources/youtube')}
+          onClick={() => navigate("/sources/youtube")}
           className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl p-6 text-left transition-all hover:border-red-500/50 hover:shadow-lg group"
         >
           <div className="flex items-center justify-between mb-4">
@@ -73,11 +85,14 @@ export function SourcesPage() {
                 {youtubeStats.loading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 size={12} className="animate-spin text-gray-400" />
-                    <span className="text-sm dark:text-gray-400 text-gray-600">Chargement...</span>
+                    <span className="text-sm dark:text-gray-400 text-gray-600">
+                      Chargement...
+                    </span>
                   </div>
                 ) : (
                   <p className="text-sm dark:text-gray-400 text-gray-600">
-                    {youtubeStats.channels} chaîne{youtubeStats.channels !== 1 ? 's' : ''} •{' '}
+                    {youtubeStats.channels} chaîne
+                    {youtubeStats.channels !== 1 ? "s" : ""} •{" "}
                     {youtubeStats.videos.toLocaleString()} vidéos
                   </p>
                 )}
@@ -89,7 +104,8 @@ export function SourcesPage() {
             />
           </div>
           <p className="text-sm dark:text-gray-400 text-gray-600">
-            Suivez automatiquement les nouvelles vidéos de vos chaînes préférées.
+            Suivez automatiquement les nouvelles vidéos de vos chaînes
+            préférées.
           </p>
         </button>
 
@@ -100,8 +116,12 @@ export function SourcesPage() {
               <Rss size={20} className="text-orange-500" />
             </div>
             <div>
-              <h3 className="font-semibold dark:text-white text-gray-900">Flux RSS</h3>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Bientôt disponible</p>
+              <h3 className="font-semibold dark:text-white text-gray-900">
+                Flux RSS
+              </h3>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Bientôt disponible
+              </p>
             </div>
           </div>
           <p className="text-sm dark:text-gray-400 text-gray-600">
@@ -116,8 +136,12 @@ export function SourcesPage() {
               <FileText size={20} className="text-blue-500" />
             </div>
             <div>
-              <h3 className="font-semibold dark:text-white text-gray-900">Documents</h3>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Bientôt disponible</p>
+              <h3 className="font-semibold dark:text-white text-gray-900">
+                Documents
+              </h3>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Bientôt disponible
+              </p>
             </div>
           </div>
           <p className="text-sm dark:text-gray-400 text-gray-600">
@@ -137,21 +161,33 @@ export function SourcesPage() {
               <p className="text-2xl font-bold dark:text-lime text-lime-dark">
                 {youtubeStats.channels}
               </p>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Chaînes YouTube</p>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Chaînes YouTube
+              </p>
             </div>
             <div className="text-center p-4 dark:bg-dark-700 bg-light-100 rounded-lg">
               <p className="text-2xl font-bold dark:text-cyan text-cyan-dark">
                 {youtubeStats.videos.toLocaleString()}
               </p>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Vidéos indexées</p>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Vidéos indexées
+              </p>
             </div>
             <div className="text-center p-4 dark:bg-dark-700 bg-light-100 rounded-lg">
-              <p className="text-2xl font-bold dark:text-gray-500 text-gray-400">0</p>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Flux RSS</p>
+              <p className="text-2xl font-bold dark:text-gray-500 text-gray-400">
+                0
+              </p>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Flux RSS
+              </p>
             </div>
             <div className="text-center p-4 dark:bg-dark-700 bg-light-100 rounded-lg">
-              <p className="text-2xl font-bold dark:text-gray-500 text-gray-400">0</p>
-              <p className="text-sm dark:text-gray-400 text-gray-600">Documents</p>
+              <p className="text-2xl font-bold dark:text-gray-500 text-gray-400">
+                0
+              </p>
+              <p className="text-sm dark:text-gray-400 text-gray-600">
+                Documents
+              </p>
             </div>
           </div>
         </div>

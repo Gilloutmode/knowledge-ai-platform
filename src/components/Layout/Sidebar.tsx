@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Bell,
   Plus,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface NavItem {
   id: string;
@@ -27,11 +27,36 @@ interface SidebarProps {
 }
 
 const mainNavItems: NavItem[] = [
-  { id: 'dashboard', path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-  { id: 'contents', path: '/contents', label: 'Contents', icon: <FileText size={20} /> },
-  { id: 'sources', path: '/sources', label: 'Sources', icon: <Link size={20} /> },
-  { id: 'analyses', path: '/analyses', label: 'Analyses', icon: <Sparkles size={20} /> },
-  { id: 'chat', path: '/chat', label: 'Chat', icon: <MessageSquare size={20} /> },
+  {
+    id: "dashboard",
+    path: "/",
+    label: "Dashboard",
+    icon: <LayoutDashboard size={20} />,
+  },
+  {
+    id: "contents",
+    path: "/contents",
+    label: "Contents",
+    icon: <FileText size={20} />,
+  },
+  {
+    id: "sources",
+    path: "/sources",
+    label: "Sources",
+    icon: <Link size={20} />,
+  },
+  {
+    id: "analyses",
+    path: "/analyses",
+    label: "Analyses",
+    icon: <Sparkles size={20} />,
+  },
+  {
+    id: "chat",
+    path: "/chat",
+    label: "Chat",
+    icon: <MessageSquare size={20} />,
+  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
@@ -47,8 +72,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
           transition-all duration-200 ease-out
           ${
             isActive
-              ? 'bg-gradient-to-r from-lime/20 to-lime/5 dark:text-white text-gray-900'
-              : 'dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300'
+              ? "bg-gradient-to-r from-lime/20 to-lime/5 dark:text-white text-gray-900"
+              : "dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300"
           }
         `}
       >
@@ -60,17 +85,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
             )}
 
             {/* Icon */}
-            <span className={`flex-shrink-0 ${isActive ? 'dark:text-lime text-lime-dark' : 'dark:group-hover:text-lime group-hover:text-lime-dark'}`}>
+            <span
+              className={`flex-shrink-0 ${isActive ? "dark:text-lime text-lime-dark" : "dark:group-hover:text-lime group-hover:text-lime-dark"}`}
+            >
               {item.icon}
             </span>
 
             {/* Label */}
-            {!isCollapsed && <span className="font-medium text-sm truncate">{item.label}</span>}
+            {!isCollapsed && (
+              <span className="font-medium text-sm truncate">{item.label}</span>
+            )}
 
             {/* Badge */}
             {item.badge && item.badge > 0 && !isCollapsed && (
               <span className="ml-auto bg-lime text-black text-xs font-semibold px-2 py-0.5 rounded-full">
-                {item.badge > 99 ? '99+' : item.badge}
+                {item.badge > 99 ? "99+" : item.badge}
               </span>
             )}
           </>
@@ -84,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
       className={`
         fixed left-0 top-0 h-screen dark:bg-dark-900 bg-light-100 border-r dark:border-dark-border border-light-border
         flex flex-col transition-all duration-300 ease-out z-50
-        ${isCollapsed ? 'w-[72px]' : 'w-[260px]'}
+        ${isCollapsed ? "w-[72px]" : "w-[260px]"}
       `}
     >
       {/* Logo */}
@@ -96,14 +125,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
           </div>
 
           {!isCollapsed && (
-            <span className="font-semibold dark:text-white text-gray-900 tracking-tight">Knowledge AI</span>
+            <span className="font-semibold dark:text-white text-gray-900 tracking-tight">
+              Knowledge AI
+            </span>
           )}
         </NavLink>
 
         {/* Collapse Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? 'Déplier le menu' : 'Replier le menu'}
+          aria-label={isCollapsed ? "Déplier le menu" : "Replier le menu"}
           className="p-1.5 rounded-lg dark:hover:bg-dark-700 hover:bg-light-300 dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 transition-colors"
         >
           {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -114,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
       {!isCollapsed && (
         <div className="px-4 py-4">
           <button
-            onClick={() => navigate('/add-source')}
+            onClick={() => navigate("/add-source")}
             className="
               w-full flex items-center justify-center gap-2 py-2.5 px-4
               bg-lime hover:bg-lime-hover text-black font-medium text-sm
@@ -143,7 +174,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
             ))}
           </div>
         </div>
-
       </nav>
 
       {/* Bottom Section */}
@@ -156,8 +186,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
             transition-all duration-200 ease-out
             ${
               isActive
-                ? 'dark:bg-dark-700 bg-light-300 dark:text-white text-gray-900'
-                : 'dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300'
+                ? "dark:bg-dark-700 bg-light-300 dark:text-white text-gray-900"
+                : "dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300"
             }
           `}
         >
@@ -165,11 +195,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
             <Bell size={20} />
             {notificationCount > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-lime text-black text-[10px] font-bold rounded-full flex items-center justify-center">
-                {notificationCount > 9 ? '9+' : notificationCount}
+                {notificationCount > 9 ? "9+" : notificationCount}
               </span>
             )}
           </span>
-          {!isCollapsed && <span className="font-medium text-sm">Notifications</span>}
+          {!isCollapsed && (
+            <span className="font-medium text-sm">Notifications</span>
+          )}
         </NavLink>
 
         {/* Settings */}
@@ -180,13 +212,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
             transition-all duration-200 ease-out
             ${
               isActive
-                ? 'dark:bg-dark-700 bg-light-300 dark:text-white text-gray-900'
-                : 'dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300'
+                ? "dark:bg-dark-700 bg-light-300 dark:text-white text-gray-900"
+                : "dark:text-gray-400 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-300"
             }
           `}
         >
           <Settings size={20} />
-          {!isCollapsed && <span className="font-medium text-sm">Paramètres</span>}
+          {!isCollapsed && (
+            <span className="font-medium text-sm">Paramètres</span>
+          )}
         </NavLink>
 
         {/* Logout */}
@@ -199,7 +233,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ notificationCount = 0 }) => {
           "
         >
           <LogOut size={20} />
-          {!isCollapsed && <span className="font-medium text-sm">Déconnexion</span>}
+          {!isCollapsed && (
+            <span className="font-medium text-sm">Déconnexion</span>
+          )}
         </button>
       </div>
     </aside>

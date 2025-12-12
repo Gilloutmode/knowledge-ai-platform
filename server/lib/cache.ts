@@ -4,7 +4,7 @@
  * Can be replaced with Redis in production
  */
 
-import { logger } from './logger';
+import { logger } from "./logger";
 
 interface CacheEntry<T> {
   data: T;
@@ -18,7 +18,7 @@ class CacheService {
   constructor() {
     // Cleanup expired entries every minute
     this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
-    logger.info('Cache service initialized');
+    logger.info("Cache service initialized");
   }
 
   /**
@@ -72,7 +72,7 @@ class CacheService {
    */
   clear(): void {
     this.cache.clear();
-    logger.info('Cache cleared');
+    logger.info("Cache cleared");
   }
 
   /**
@@ -98,7 +98,7 @@ class CacheService {
       }
     }
     if (expired > 0) {
-      logger.debug({ expired }, 'Cache cleanup completed');
+      logger.debug({ expired }, "Cache cleanup completed");
     }
   }
 
@@ -111,7 +111,7 @@ class CacheService {
       this.cleanupInterval = null;
     }
     this.cache.clear();
-    logger.info('Cache service shut down');
+    logger.info("Cache service shut down");
   }
 }
 
@@ -123,17 +123,17 @@ export const cache = new CacheService();
  */
 export const cacheKeys = {
   channels: {
-    list: () => 'channels:list',
+    list: () => "channels:list",
     detail: (id: string) => `channels:${id}`,
     videos: (id: string) => `channels:${id}:videos`,
   },
   videos: {
-    list: () => 'videos:list',
+    list: () => "videos:list",
     detail: (id: string) => `videos:${id}`,
     analyses: (id: string) => `videos:${id}:analyses`,
   },
   analyses: {
-    list: () => 'analyses:list',
+    list: () => "analyses:list",
     detail: (id: string) => `analyses:${id}`,
     byVideo: (videoId: string) => `analyses:video:${videoId}`,
   },

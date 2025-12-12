@@ -1,6 +1,6 @@
-import React from 'react';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
+import React from "react";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,10 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Main Content */}
       <div className="ml-[260px] min-h-screen transition-all duration-300">
         {/* Header */}
-        <Header
-          title={pageTitle}
-          notificationCount={notificationCount}
-        />
+        <Header title={pageTitle} notificationCount={notificationCount} />
 
         {/* Page Content */}
         <main className="p-6">{children}</main>
@@ -36,16 +33,18 @@ export const Layout: React.FC<LayoutProps> = ({
         <div
           className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20"
           style={{
-            background: 'radial-gradient(circle, rgba(171,244,63,0.3) 0%, transparent 70%)',
-            filter: 'blur(60px)',
+            background:
+              "radial-gradient(circle, rgba(171,244,63,0.3) 0%, transparent 70%)",
+            filter: "blur(60px)",
           }}
         />
         {/* Bottom left glow */}
         <div
           className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-10"
           style={{
-            background: 'radial-gradient(circle, rgba(63,244,229,0.3) 0%, transparent 70%)',
-            filter: 'blur(60px)',
+            background:
+              "radial-gradient(circle, rgba(63,244,229,0.3) 0%, transparent 70%)",
+            filter: "blur(60px)",
           }}
         />
       </div>

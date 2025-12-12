@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import ReactMarkdown from 'react-markdown';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import ReactMarkdown from "react-markdown";
 import {
   FileText,
   Zap,
@@ -23,28 +29,28 @@ import {
   Youtube,
   Rss,
   FileUp,
-} from 'lucide-react';
-import { analysesApi, AnalysisWithVideo } from '../services/api';
-import { SourceBadge } from '../components/ui/SourceBadge';
+} from "lucide-react";
+import { analysesApi, AnalysisWithVideo } from "../services/api";
+import { SourceBadge } from "../components/ui/SourceBadge";
 import {
   AdvancedFilters,
   FilterState,
   filterByDateRange,
   sortItems,
-} from '../components/AdvancedFilters';
+} from "../components/AdvancedFilters";
 
 type ReportType =
-  | 'all'
-  | 'transcript'
-  | 'summary_short'
-  | 'summary_detailed'
-  | 'lesson_card'
-  | 'actions'
-  | 'flashcards';
+  | "all"
+  | "transcript"
+  | "summary_short"
+  | "summary_detailed"
+  | "lesson_card"
+  | "actions"
+  | "flashcards";
 
-type GroupingMode = 'list' | 'by_video' | 'by_channel';
+type GroupingMode = "list" | "by_video" | "by_channel";
 
-type SourceFilter = 'all' | 'youtube' | 'rss' | 'document';
+type SourceFilter = "all" | "youtube" | "rss" | "document";
 
 interface GroupedByVideo {
   video: {
@@ -81,42 +87,47 @@ interface ReportTypeConfig {
 }
 
 const REPORT_TYPES: ReportTypeConfig[] = [
-  { id: 'all', label: 'Toutes', icon: <FileText size={16} />, color: 'bg-dark-600 text-gray-300' },
   {
-    id: 'transcript',
-    label: 'Transcription',
+    id: "all",
+    label: "Toutes",
     icon: <FileText size={16} />,
-    color: 'bg-gray-500/15 text-gray-300',
+    color: "bg-dark-600 text-gray-300",
   },
   {
-    id: 'summary_short',
-    label: 'Résumé Express',
+    id: "transcript",
+    label: "Transcription",
+    icon: <FileText size={16} />,
+    color: "bg-gray-500/15 text-gray-300",
+  },
+  {
+    id: "summary_short",
+    label: "Résumé Express",
     icon: <Zap size={16} />,
-    color: 'bg-lime-muted dark:text-lime text-lime-dark',
+    color: "bg-lime-muted dark:text-lime text-lime-dark",
   },
   {
-    id: 'summary_detailed',
-    label: 'Résumé Détaillé',
+    id: "summary_detailed",
+    label: "Résumé Détaillé",
     icon: <BookOpen size={16} />,
-    color: 'bg-cyan-muted dark:text-cyan text-cyan-dark',
+    color: "bg-cyan-muted dark:text-cyan text-cyan-dark",
   },
   {
-    id: 'lesson_card',
-    label: 'Lesson Card',
+    id: "lesson_card",
+    label: "Lesson Card",
     icon: <GraduationCap size={16} />,
-    color: 'bg-purple-500/15 text-purple-400',
+    color: "bg-purple-500/15 text-purple-400",
   },
   {
-    id: 'actions',
+    id: "actions",
     label: "Plan d'Action",
     icon: <CheckSquare size={16} />,
-    color: 'bg-green-500/15 text-green-400',
+    color: "bg-green-500/15 text-green-400",
   },
   {
-    id: 'flashcards',
-    label: 'Flashcards',
+    id: "flashcards",
+    label: "Flashcards",
     icon: <Layers size={16} />,
-    color: 'bg-orange-500/15 text-orange-400',
+    color: "bg-orange-500/15 text-orange-400",
   },
 ];
 
@@ -134,9 +145,9 @@ function formatDate(dateString: string): string {
 
   if (diffMins < 60) return `Il y a ${diffMins} min`;
   if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays === 1) return 'Hier';
+  if (diffDays === 1) return "Hier";
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
-  return date.toLocaleDateString('fr-FR');
+  return date.toLocaleDateString("fr-FR");
 }
 
 function countWords(text: string): number {
@@ -153,10 +164,10 @@ function groupByVideo(analyses: AnalysisWithVideo[]): GroupedByVideo[] {
       videoMap.set(videoId, {
         video: {
           id: videoId,
-          title: analysis.videos?.title || 'Vidéo inconnue',
+          title: analysis.videos?.title || "Vidéo inconnue",
           thumbnail_url: analysis.videos?.thumbnail_url || null,
-          youtube_video_id: analysis.videos?.youtube_video_id || '',
-          channel_name: analysis.videos?.channels?.name || 'Chaîne inconnue',
+          youtube_video_id: analysis.videos?.youtube_video_id || "",
+          channel_name: analysis.videos?.channels?.name || "Chaîne inconnue",
           channel_id: analysis.videos?.channels?.id,
           channel_thumbnail: analysis.videos?.channels?.thumbnail_url,
         },
@@ -168,8 +179,12 @@ function groupByVideo(analyses: AnalysisWithVideo[]): GroupedByVideo[] {
 
   return Array.from(videoMap.values()).sort((a, b) => {
     // Sort by most recent analysis
-    const aDate = Math.max(...a.analyses.map((x) => new Date(x.created_at).getTime()));
-    const bDate = Math.max(...b.analyses.map((x) => new Date(x.created_at).getTime()));
+    const aDate = Math.max(
+      ...a.analyses.map((x) => new Date(x.created_at).getTime()),
+    );
+    const bDate = Math.max(
+      ...b.analyses.map((x) => new Date(x.created_at).getTime()),
+    );
     return bDate - aDate;
   });
 }
@@ -179,8 +194,8 @@ function groupByChannel(analyses: AnalysisWithVideo[]): GroupedByChannel[] {
   const channelMap = new Map<string, GroupedByChannel>();
 
   analyses.forEach((analysis) => {
-    const channelId = analysis.videos?.channels?.id || 'unknown';
-    const channelName = analysis.videos?.channels?.name || 'Chaîne inconnue';
+    const channelId = analysis.videos?.channels?.id || "unknown";
+    const channelName = analysis.videos?.channels?.name || "Chaîne inconnue";
     const channelThumbnail = analysis.videos?.channels?.thumbnail_url || null;
 
     if (!channelMap.has(channelId)) {
@@ -201,7 +216,7 @@ function groupByChannel(analyses: AnalysisWithVideo[]): GroupedByChannel[] {
     if (!videoGroup) {
       videoGroup = {
         id: videoId,
-        title: analysis.videos?.title || 'Vidéo inconnue',
+        title: analysis.videos?.title || "Vidéo inconnue",
         thumbnail_url: analysis.videos?.thumbnail_url || null,
         analyses: [],
       };
@@ -220,7 +235,9 @@ function groupByChannel(analyses: AnalysisWithVideo[]): GroupedByChannel[] {
     })
     .map((channel) => ({
       ...channel,
-      videos: channel.videos.sort((a, b) => b.analyses.length - a.analyses.length),
+      videos: channel.videos.sort(
+        (a, b) => b.analyses.length - a.analyses.length,
+      ),
     }));
 }
 
@@ -231,9 +248,9 @@ interface AnalysisCardProps {
 
 const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onClick }) => {
   const typeConfig = getTypeConfig(analysis.type);
-  const videoTitle = analysis.videos?.title || 'Vidéo inconnue';
-  const channelName = analysis.videos?.channels?.name || 'Chaîne inconnue';
-  const thumbnail = analysis.videos?.thumbnail_url || '';
+  const videoTitle = analysis.videos?.title || "Vidéo inconnue";
+  const channelName = analysis.videos?.channels?.name || "Chaîne inconnue";
+  const thumbnail = analysis.videos?.thumbnail_url || "";
   const wordCount = countWords(analysis.content);
 
   return (
@@ -250,7 +267,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onClick }) => {
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                'https://via.placeholder.com/96x64/1a1a1a/666?text=Video';
+                "https://via.placeholder.com/96x64/1a1a1a/666?text=Video";
             }}
           />
         </div>
@@ -271,7 +288,9 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onClick }) => {
               <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1 mt-1 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors">
                 {videoTitle}
               </h3>
-              <p className="dark:text-gray-500 text-gray-400 text-xs">{channelName}</p>
+              <p className="dark:text-gray-500 text-gray-400 text-xs">
+                {channelName}
+              </p>
             </div>
             <ChevronRight
               size={18}
@@ -297,11 +316,14 @@ interface AnalysisDetailModalProps {
   onClose: () => void;
 }
 
-const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onClose }) => {
+const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
+  analysis,
+  onClose,
+}) => {
   const typeConfig = getTypeConfig(analysis.type);
-  const videoTitle = analysis.videos?.title || 'Vidéo inconnue';
-  const channelName = analysis.videos?.channels?.name || 'Chaîne inconnue';
-  const thumbnail = analysis.videos?.thumbnail_url || '';
+  const videoTitle = analysis.videos?.title || "Vidéo inconnue";
+  const channelName = analysis.videos?.channels?.name || "Chaîne inconnue";
+  const thumbnail = analysis.videos?.thumbnail_url || "";
   const youtubeUrl = analysis.videos?.youtube_video_id
     ? `https://www.youtube.com/watch?v=${analysis.videos.youtube_video_id}`
     : null;
@@ -309,9 +331,9 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
   const readTime = Math.ceil(wordCount / 200); // ~200 mots/min
 
   const handleDownload = () => {
-    const blob = new Blob([analysis.content], { type: 'text/markdown' });
+    const blob = new Blob([analysis.content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${typeConfig.label} - ${videoTitle.substring(0, 50)}.md`;
     document.body.appendChild(a);
@@ -323,7 +345,10 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
 
       {/* Modal */}
       <div className="relative w-full max-w-4xl max-h-[90vh] dark:bg-dark-900 bg-white border dark:border-dark-border border-light-border rounded-2xl overflow-hidden shadow-2xl shadow-lime/5 animate-slide-up">
@@ -345,7 +370,10 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                   className="p-2 dark:bg-dark-800/80 bg-light-200/80 dark:hover:bg-dark-700 hover:bg-light-300 rounded-lg transition-colors backdrop-blur-sm"
                   title="Voir sur YouTube"
                 >
-                  <ExternalLink size={16} className="dark:text-gray-300 text-gray-600" />
+                  <ExternalLink
+                    size={16}
+                    className="dark:text-gray-300 text-gray-600"
+                  />
                 </a>
               )}
               <button
@@ -353,7 +381,10 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                 className="p-2 dark:bg-dark-800/80 bg-light-200/80 dark:hover:bg-dark-700 hover:bg-light-300 rounded-lg transition-colors backdrop-blur-sm"
                 title="Télécharger en Markdown"
               >
-                <Download size={16} className="dark:text-gray-300 text-gray-600" />
+                <Download
+                  size={16}
+                  className="dark:text-gray-300 text-gray-600"
+                />
               </button>
               <button
                 onClick={onClose}
@@ -375,7 +406,7 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      'https://via.placeholder.com/80x56/1a1a1a/666?text=Video';
+                      "https://via.placeholder.com/80x56/1a1a1a/666?text=Video";
                   }}
                 />
               </div>
@@ -387,7 +418,9 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                   {typeConfig.icon}
                   {typeConfig.label}
                 </span>
-                <h2 className="text-lg font-bold dark:text-white text-gray-900 mt-2 line-clamp-2">{videoTitle}</h2>
+                <h2 className="text-lg font-bold dark:text-white text-gray-900 mt-2 line-clamp-2">
+                  {videoTitle}
+                </h2>
                 <div className="flex items-center gap-4 mt-1 text-sm dark:text-gray-400 text-gray-500">
                   <span>{channelName}</span>
                   <span className="flex items-center gap-1">
@@ -422,25 +455,41 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                     </h2>
                   ),
                   h3: ({ children }) => (
-                    <h3 className="text-lg font-semibold dark:text-white text-gray-900 mb-2 mt-4">{children}</h3>
+                    <h3 className="text-lg font-semibold dark:text-white text-gray-900 mb-2 mt-4">
+                      {children}
+                    </h3>
                   ),
                   p: ({ children }) => (
-                    <p className="dark:text-gray-300 text-gray-600 leading-relaxed mb-4">{children}</p>
+                    <p className="dark:text-gray-300 text-gray-600 leading-relaxed mb-4">
+                      {children}
+                    </p>
                   ),
-                  ul: ({ children }) => <ul className="space-y-2 mb-4 ml-1">{children}</ul>,
+                  ul: ({ children }) => (
+                    <ul className="space-y-2 mb-4 ml-1">{children}</ul>
+                  ),
                   ol: ({ children }) => (
-                    <ol className="space-y-2 mb-4 ml-1 list-decimal list-inside">{children}</ol>
+                    <ol className="space-y-2 mb-4 ml-1 list-decimal list-inside">
+                      {children}
+                    </ol>
                   ),
                   li: ({ children }) => (
                     <li className="flex items-start gap-2 dark:text-gray-300 text-gray-600">
-                      <span className="dark:text-lime text-lime-dark mt-1.5 flex-shrink-0">•</span>
+                      <span className="dark:text-lime text-lime-dark mt-1.5 flex-shrink-0">
+                        •
+                      </span>
                       <span>{children}</span>
                     </li>
                   ),
                   strong: ({ children }) => (
-                    <strong className="font-semibold dark:text-white text-gray-900">{children}</strong>
+                    <strong className="font-semibold dark:text-white text-gray-900">
+                      {children}
+                    </strong>
                   ),
-                  em: ({ children }) => <em className="italic dark:text-cyan/90 text-cyan-dark/90">{children}</em>,
+                  em: ({ children }) => (
+                    <em className="italic dark:text-cyan/90 text-cyan-dark/90">
+                      {children}
+                    </em>
+                  ),
                   blockquote: ({ children }) => (
                     <blockquote className="border-l-4 border-lime/50 pl-4 py-2 my-4 bg-lime/5 rounded-r-lg italic dark:text-gray-300 text-gray-600">
                       {children}
@@ -456,7 +505,9 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({ analysis, onC
                       {children}
                     </pre>
                   ),
-                  hr: () => <hr className="dark:border-dark-border border-light-border my-6" />,
+                  hr: () => (
+                    <hr className="dark:border-dark-border border-light-border my-6" />
+                  ),
                   a: ({ href, children }) => (
                     <a
                       href={href}
@@ -485,7 +536,10 @@ interface GroupedByVideoSectionProps {
   onAnalysisClick: (analysis: AnalysisWithVideo) => void;
 }
 
-const GroupedByVideoSection: React.FC<GroupedByVideoSectionProps> = ({ groups, onAnalysisClick }) => {
+const GroupedByVideoSection: React.FC<GroupedByVideoSectionProps> = ({
+  groups,
+  onAnalysisClick,
+}) => {
   const [expandedVideos, setExpandedVideos] = useState<Set<string>>(new Set());
 
   const toggleVideo = (videoId: string) => {
@@ -515,12 +569,12 @@ const GroupedByVideoSection: React.FC<GroupedByVideoSectionProps> = ({ groups, o
             {/* Thumbnail */}
             <div className="w-20 h-14 rounded-lg overflow-hidden dark:bg-dark-700 bg-light-300 flex-shrink-0">
               <img
-                src={group.video.thumbnail_url || ''}
+                src={group.video.thumbnail_url || ""}
                 alt={group.video.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    'https://via.placeholder.com/80x56/1a1a1a/666?text=Video';
+                    "https://via.placeholder.com/80x56/1a1a1a/666?text=Video";
                 }}
               />
             </div>
@@ -529,17 +583,20 @@ const GroupedByVideoSection: React.FC<GroupedByVideoSectionProps> = ({ groups, o
               <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1">
                 {group.video.title}
               </h3>
-              <p className="dark:text-gray-500 text-gray-400 text-xs">{group.video.channel_name}</p>
+              <p className="dark:text-gray-500 text-gray-400 text-xs">
+                {group.video.channel_name}
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
               <span className="px-2.5 py-1 bg-lime/20 dark:text-lime text-lime-dark text-xs font-semibold rounded-full">
-                {group.analyses.length} analyse{group.analyses.length > 1 ? 's' : ''}
+                {group.analyses.length} analyse
+                {group.analyses.length > 1 ? "s" : ""}
               </span>
               <ChevronDown
                 size={18}
                 className={`dark:text-gray-500 text-gray-400 transition-transform ${
-                  expandedVideos.has(group.video.id) ? 'rotate-180' : ''
+                  expandedVideos.has(group.video.id) ? "rotate-180" : ""
                 }`}
               />
             </div>
@@ -585,8 +642,13 @@ interface GroupedByChannelSectionProps {
   onAnalysisClick: (analysis: AnalysisWithVideo) => void;
 }
 
-const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ groups, onAnalysisClick }) => {
-  const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
+const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({
+  groups,
+  onAnalysisClick,
+}) => {
+  const [expandedChannels, setExpandedChannels] = useState<Set<string>>(
+    new Set(),
+  );
   const [expandedVideos, setExpandedVideos] = useState<Set<string>>(new Set());
 
   const toggleChannel = (channelId: string) => {
@@ -616,7 +678,10 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
   return (
     <div className="space-y-4">
       {groups.map((group) => {
-        const totalAnalyses = group.videos.reduce((sum, v) => sum + v.analyses.length, 0);
+        const totalAnalyses = group.videos.reduce(
+          (sum, v) => sum + v.analyses.length,
+          0,
+        );
 
         return (
           <div
@@ -638,7 +703,10 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Radio size={20} className="dark:text-gray-500 text-gray-400" />
+                    <Radio
+                      size={20}
+                      className="dark:text-gray-500 text-gray-400"
+                    />
                   </div>
                 )}
               </div>
@@ -648,15 +716,16 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
                   {group.channel.name}
                 </h3>
                 <p className="dark:text-gray-500 text-gray-400 text-xs">
-                  {group.videos.length} vidéo{group.videos.length > 1 ? 's' : ''} • {totalAnalyses} analyse
-                  {totalAnalyses > 1 ? 's' : ''}
+                  {group.videos.length} vidéo
+                  {group.videos.length > 1 ? "s" : ""} • {totalAnalyses} analyse
+                  {totalAnalyses > 1 ? "s" : ""}
                 </p>
               </div>
 
               <ChevronDown
                 size={18}
                 className={`dark:text-gray-500 text-gray-400 transition-transform ${
-                  expandedChannels.has(group.channel.id) ? 'rotate-180' : ''
+                  expandedChannels.has(group.channel.id) ? "rotate-180" : ""
                 }`}
               />
             </button>
@@ -665,7 +734,10 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
             {expandedChannels.has(group.channel.id) && (
               <div className="border-t dark:border-dark-border border-light-border">
                 {group.videos.map((video) => (
-                  <div key={video.id} className="border-b dark:border-dark-border/50 border-light-border/50 last:border-b-0">
+                  <div
+                    key={video.id}
+                    className="border-b dark:border-dark-border/50 border-light-border/50 last:border-b-0"
+                  >
                     {/* Video Sub-Header */}
                     <button
                       onClick={() => toggleVideo(video.id)}
@@ -673,12 +745,12 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
                     >
                       <div className="w-14 h-10 rounded overflow-hidden dark:bg-dark-700 bg-light-300 flex-shrink-0">
                         <img
-                          src={video.thumbnail_url || ''}
+                          src={video.thumbnail_url || ""}
                           alt={video.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              'https://via.placeholder.com/56x40/1a1a1a/666?text=V';
+                              "https://via.placeholder.com/56x40/1a1a1a/666?text=V";
                           }}
                         />
                       </div>
@@ -696,7 +768,7 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
                         <ChevronDown
                           size={14}
                           className={`dark:text-gray-600 text-gray-400 transition-transform ${
-                            expandedVideos.has(video.id) ? 'rotate-180' : ''
+                            expandedVideos.has(video.id) ? "rotate-180" : ""
                           }`}
                         />
                       </div>
@@ -714,7 +786,9 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({ group
                               className="w-full flex items-center justify-between gap-2 p-2 dark:bg-dark-700/30 bg-light-100 rounded-lg hover:bg-dark-700/50 transition-colors text-left"
                             >
                               <div className="flex items-center gap-2">
-                                <span className={`p-1 rounded ${typeConfig.color}`}>
+                                <span
+                                  className={`p-1 rounded ${typeConfig.color}`}
+                                >
                                   {typeConfig.icon}
                                 </span>
                                 <span className="dark:text-gray-400 text-gray-500 text-xs">
@@ -744,15 +818,18 @@ interface AnalysesPageProps {
   searchQuery?: string;
 }
 
-export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) => {
-  const [selectedType, setSelectedType] = useState<ReportType>('all');
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>('list');
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+export const AnalysesPage: React.FC<AnalysesPageProps> = ({
+  searchQuery = "",
+}) => {
+  const [selectedType, setSelectedType] = useState<ReportType>("all");
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>("list");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [analyses, setAnalyses] = useState<AnalysisWithVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisWithVideo | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] =
+    useState<AnalysisWithVideo | null>(null);
 
   // Ref for virtualized list container
   const parentRef = useRef<HTMLDivElement>(null);
@@ -761,8 +838,8 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   const [filters, setFilters] = useState<FilterState>({
     search: searchQuery,
     channelId: null,
-    dateRange: 'all',
-    sortBy: 'date_desc',
+    dateRange: "all",
+    sortBy: "date_desc",
   });
 
   // Handle filter changes
@@ -778,7 +855,7 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
       setError(null);
       try {
         const response = await analysesApi.list({
-          type: selectedType !== 'all' ? selectedType : undefined,
+          type: selectedType !== "all" ? selectedType : undefined,
           limit: 100,
           signal: abortController.signal,
         });
@@ -788,8 +865,8 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
         }
       } catch (err) {
         if (!abortController.signal.aborted) {
-          console.error('Error fetching analyses:', err);
-          setError('Impossible de charger les analyses');
+          console.error("Error fetching analyses:", err);
+          setError("Impossible de charger les analyses");
           setAnalyses([]);
         }
       } finally {
@@ -814,25 +891,30 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
     if (filters.search) {
       const query = filters.search.toLowerCase();
       result = result.filter((a) => {
-        const videoTitle = a.videos?.title || '';
-        const channelName = a.videos?.channels?.name || '';
-        return videoTitle.toLowerCase().includes(query) || channelName.toLowerCase().includes(query);
+        const videoTitle = a.videos?.title || "";
+        const channelName = a.videos?.channels?.name || "";
+        return (
+          videoTitle.toLowerCase().includes(query) ||
+          channelName.toLowerCase().includes(query)
+        );
       });
     }
 
     // Channel filter
     if (filters.channelId) {
-      result = result.filter((a) => a.videos?.channels?.id === filters.channelId);
+      result = result.filter(
+        (a) => a.videos?.channels?.id === filters.channelId,
+      );
     }
 
     // Date range filter
-    result = filterByDateRange(result, filters.dateRange, 'created_at');
+    result = filterByDateRange(result, filters.dateRange, "created_at");
 
     // Sorting - for analyses we'll use created_at for date sorting
     // Custom sort for analyses since we need different getters
     const sortedResult = sortItems(result, filters.sortBy, {
       date: (a) => a.created_at,
-      title: (a) => a.videos?.title || '',
+      title: (a) => a.videos?.title || "",
       views: () => 0, // No views for analyses
     });
 
@@ -840,8 +922,14 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   }, [analyses, filters]);
 
   // Compute grouped data
-  const groupedByVideo = useMemo(() => groupByVideo(filteredAnalyses), [filteredAnalyses]);
-  const groupedByChannel = useMemo(() => groupByChannel(filteredAnalyses), [filteredAnalyses]);
+  const groupedByVideo = useMemo(
+    () => groupByVideo(filteredAnalyses),
+    [filteredAnalyses],
+  );
+  const groupedByChannel = useMemo(
+    () => groupByChannel(filteredAnalyses),
+    [filteredAnalyses],
+  );
 
   // Virtualizer for list view - optimizes rendering of large lists
   const rowVirtualizer = useVirtualizer({
@@ -854,7 +942,10 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={32} className="animate-spin dark:text-lime text-lime-dark" />
+        <Loader2
+          size={32}
+          className="animate-spin dark:text-lime text-lime-dark"
+        />
       </div>
     );
   }
@@ -864,20 +955,23 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Analyses</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+            Analyses
+          </h1>
           <p className="dark:text-gray-400 text-gray-500 mt-1">
-            {totalCount} analyse{totalCount !== 1 ? 's' : ''} générée{totalCount !== 1 ? 's' : ''}
+            {totalCount} analyse{totalCount !== 1 ? "s" : ""} générée
+            {totalCount !== 1 ? "s" : ""}
           </p>
         </div>
 
         {/* View Toggle */}
         <div className="flex items-center gap-1 dark:bg-dark-700 bg-light-300 rounded-lg p-1">
           <button
-            onClick={() => setGroupingMode('list')}
+            onClick={() => setGroupingMode("list")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              groupingMode === 'list'
-                ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm'
-                : 'dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              groupingMode === "list"
+                ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm"
+                : "dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white"
             }`}
             title="Vue liste"
           >
@@ -885,11 +979,11 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
             <span className="hidden sm:inline">Liste</span>
           </button>
           <button
-            onClick={() => setGroupingMode('by_video')}
+            onClick={() => setGroupingMode("by_video")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              groupingMode === 'by_video'
-                ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm'
-                : 'dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              groupingMode === "by_video"
+                ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm"
+                : "dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white"
             }`}
             title="Grouper par vidéo"
           >
@@ -897,11 +991,11 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
             <span className="hidden sm:inline">Par vidéo</span>
           </button>
           <button
-            onClick={() => setGroupingMode('by_channel')}
+            onClick={() => setGroupingMode("by_channel")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              groupingMode === 'by_channel'
-                ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm'
-                : 'dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              groupingMode === "by_channel"
+                ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900 shadow-sm"
+                : "dark:text-gray-400 text-gray-500 hover:text-gray-900 dark:hover:text-white"
             }`}
             title="Grouper par chaîne"
           >
@@ -921,21 +1015,21 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
       {/* Source Tabs */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => setSourceFilter('all')}
+          onClick={() => setSourceFilter("all")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            sourceFilter === 'all'
-              ? 'dark:bg-lime bg-lime-dark dark:text-black text-white'
-              : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+            sourceFilter === "all"
+              ? "dark:bg-lime bg-lime-dark dark:text-black text-white"
+              : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
           }`}
         >
           Toutes ({totalCount})
         </button>
         <button
-          onClick={() => setSourceFilter('youtube')}
+          onClick={() => setSourceFilter("youtube")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            sourceFilter === 'youtube'
-              ? 'bg-red-500 text-white'
-              : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+            sourceFilter === "youtube"
+              ? "bg-red-500 text-white"
+              : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
           }`}
         >
           <Youtube size={16} />
@@ -977,8 +1071,8 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
               transition-all duration-200
               ${
                 selectedType === type.id
-                  ? 'bg-lime text-black'
-                  : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-600 hover:bg-light-400'
+                  ? "bg-lime text-black"
+                  : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-600 hover:bg-light-400"
               }
             `}
           >
@@ -994,11 +1088,13 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
           <div className="inline-flex p-4 bg-lime-muted rounded-2xl mb-4">
             <FileText size={32} className="dark:text-lime text-lime-dark" />
           </div>
-          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucune analyse</h2>
+          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+            Aucune analyse
+          </h2>
           <p className="dark:text-gray-400 text-gray-500">
-            {filters.search || filters.channelId || filters.dateRange !== 'all'
-              ? 'Aucune analyse trouvée avec ces filtres'
-              : 'Les analyses de vos vidéos apparaîtront ici'}
+            {filters.search || filters.channelId || filters.dateRange !== "all"
+              ? "Aucune analyse trouvée avec ces filtres"
+              : "Les analyses de vos vidéos apparaîtront ici"}
           </p>
         </div>
       )}
@@ -1007,7 +1103,7 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
       {filteredAnalyses.length > 0 && (
         <>
           {/* List View - Virtualized for performance */}
-          {groupingMode === 'list' && (
+          {groupingMode === "list" && (
             <div
               ref={parentRef}
               className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto"
@@ -1015,8 +1111,8 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
               <div
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
-                  width: '100%',
-                  position: 'relative',
+                  width: "100%",
+                  position: "relative",
                 }}
               >
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -1025,10 +1121,10 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
                     <div
                       key={analysis.id}
                       style={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         left: 0,
-                        width: '100%',
+                        width: "100%",
                         height: `${virtualRow.size}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
@@ -1046,7 +1142,7 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
           )}
 
           {/* Grouped by Video View */}
-          {groupingMode === 'by_video' && (
+          {groupingMode === "by_video" && (
             <GroupedByVideoSection
               groups={groupedByVideo}
               onAnalysisClick={setSelectedAnalysis}
@@ -1054,7 +1150,7 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({ searchQuery = '' }) 
           )}
 
           {/* Grouped by Channel View */}
-          {groupingMode === 'by_channel' && (
+          {groupingMode === "by_channel" && (
             <GroupedByChannelSection
               groups={groupedByChannel}
               onAnalysisClick={setSelectedAnalysis}

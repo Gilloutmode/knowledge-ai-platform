@@ -1,6 +1,6 @@
-import { Context, Next } from 'hono';
-import { createHmac, timingSafeEqual } from 'crypto';
-import { logger } from '../lib/logger';
+import { Context, Next } from "hono";
+import { createHmac, timingSafeEqual } from "crypto";
+import { logger } from "../lib/logger";
 
 /**
  * Webhook Authentication Middleware
@@ -39,10 +39,10 @@ const MIN_SECRET_LENGTH = 32;
 export function generateWebhookSignature(
   payload: string,
   timestamp: number,
-  secret: string
+  secret: string,
 ): string {
   const signaturePayload = `${timestamp}.${payload}`;
-  return createHmac('sha256', secret).update(signaturePayload).digest('hex');
+  return createHmac("sha256", secret).update(signaturePayload).digest("hex");
 }
 
 /**
@@ -53,14 +53,18 @@ function verifyHmacSignature(
   payload: string,
   timestamp: number,
   providedSignature: string,
-  secret: string
+  secret: string,
 ): boolean {
-  const expectedSignature = generateWebhookSignature(payload, timestamp, secret);
+  const expectedSignature = generateWebhookSignature(
+    payload,
+    timestamp,
+    secret,
+  );
 
   // Use timing-safe comparison to prevent timing attacks
   try {
-    const providedBuffer = Buffer.from(providedSignature, 'hex');
-    const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+    const providedBuffer = Buffer.from(providedSignature, "hex");
+    const expectedBuffer = Buffer.from(expectedSignature, "hex");
 
     if (providedBuffer.length !== expectedBuffer.length) {
       return false;
@@ -86,16 +90,18 @@ export async function webhookAuth(c: Context, next: Next) {
   // Check if secret is configured
   if (!WEBHOOK_SECRET) {
     // In development, warn and allow (for testing only)
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       logger.warn(
-        'N8N_WEBHOOK_SECRET not configured - webhook auth disabled (DEVELOPMENT ONLY)'
+        "N8N_WEBHOOK_SECRET not configured - webhook auth disabled (DEVELOPMENT ONLY)",
       );
       return next();
     }
 
     // In production, reject all requests if no secret configured
-    logger.error('Webhook rejected: N8N_WEBHOOK_SECRET not configured in production');
-    return c.json({ error: 'Webhook authentication not configured' }, 500);
+    logger.error(
+      "Webhook rejected: N8N_WEBHOOK_SECRET not configured in production",
+    );
+    return c.json({ error: "Webhook authentication not configured" }, 500);
   }
 
   // Validate secret length
@@ -103,15 +109,16 @@ export async function webhookAuth(c: Context, next: Next) {
     logger.warn(
       `Webhook secret is too short (${WEBHOOK_SECRET.length} chars). ` +
         `Minimum recommended: ${MIN_SECRET_LENGTH} chars. ` +
-        `Generate with: openssl rand -hex 32`
+        `Generate with: openssl rand -hex 32`,
     );
   }
 
   // Get authentication headers
-  const signature = c.req.header('X-Webhook-Signature');
-  const timestampHeader = c.req.header('X-Webhook-Timestamp');
+  const signature = c.req.header("X-Webhook-Signature");
+  const timestampHeader = c.req.header("X-Webhook-Timestamp");
   const legacySecret =
-    c.req.header('X-Webhook-Secret') || c.req.header('Authorization')?.replace('Bearer ', '');
+    c.req.header("X-Webhook-Secret") ||
+    c.req.header("Authorization")?.replace("Bearer ", "");
 
   // HMAC mode (preferred)
   if (signature && timestampHeader) {
@@ -119,22 +126,22 @@ export async function webhookAuth(c: Context, next: Next) {
 
     // Validate timestamp format
     if (isNaN(timestamp)) {
-      logger.error('Webhook rejected: Invalid timestamp format');
-      return c.json({ error: 'Invalid timestamp format' }, 401);
+      logger.error("Webhook rejected: Invalid timestamp format");
+      return c.json({ error: "Invalid timestamp format" }, 401);
     }
 
     // Check timestamp age (replay protection)
     if (!isTimestampValid(timestamp)) {
       logger.error(
         { timestamp, age: Math.abs(Math.floor(Date.now() / 1000) - timestamp) },
-        'Webhook rejected: Timestamp too old (possible replay attack)'
+        "Webhook rejected: Timestamp too old (possible replay attack)",
       );
       return c.json(
         {
-          error: 'Request timestamp too old',
+          error: "Request timestamp too old",
           maxAge: MAX_TIMESTAMP_AGE_SECONDS,
         },
-        401
+        401,
       );
     }
 
@@ -145,20 +152,22 @@ export async function webhookAuth(c: Context, next: Next) {
       // Re-parse the body since we consumed it
       // Hono will cache the parsed body
     } catch {
-      logger.error('Webhook rejected: Failed to read request body');
-      return c.json({ error: 'Failed to read request body' }, 400);
+      logger.error("Webhook rejected: Failed to read request body");
+      return c.json({ error: "Failed to read request body" }, 400);
     }
 
     // Extract signature (remove 'sha256=' prefix if present)
-    const cleanSignature = signature.replace(/^sha256=/, '');
+    const cleanSignature = signature.replace(/^sha256=/, "");
 
     // Verify signature
-    if (!verifyHmacSignature(rawBody, timestamp, cleanSignature, WEBHOOK_SECRET)) {
-      logger.error('Webhook rejected: Invalid HMAC signature');
-      return c.json({ error: 'Invalid signature' }, 401);
+    if (
+      !verifyHmacSignature(rawBody, timestamp, cleanSignature, WEBHOOK_SECRET)
+    ) {
+      logger.error("Webhook rejected: Invalid HMAC signature");
+      return c.json({ error: "Invalid signature" }, 401);
     }
 
-    logger.debug('Webhook authenticated via HMAC-SHA256');
+    logger.debug("Webhook authenticated via HMAC-SHA256");
     return next();
   }
 
@@ -166,8 +175,8 @@ export async function webhookAuth(c: Context, next: Next) {
   // DEPRECATED: Will be removed in future versions
   if (legacySecret) {
     logger.warn(
-      'Using legacy webhook authentication (X-Webhook-Secret header). ' +
-        'Please migrate to HMAC-SHA256 signatures for better security.'
+      "Using legacy webhook authentication (X-Webhook-Secret header). " +
+        "Please migrate to HMAC-SHA256 signatures for better security.",
     );
 
     // Timing-safe comparison for legacy mode too
@@ -179,25 +188,25 @@ export async function webhookAuth(c: Context, next: Next) {
         providedBuffer.length === expectedBuffer.length &&
         timingSafeEqual(providedBuffer, expectedBuffer)
       ) {
-        logger.debug('Webhook authenticated via legacy secret (DEPRECATED)');
+        logger.debug("Webhook authenticated via legacy secret (DEPRECATED)");
         return next();
       }
     } catch {
       // Fall through to rejection
     }
 
-    logger.error('Webhook rejected: Invalid legacy secret');
-    return c.json({ error: 'Invalid webhook secret' }, 401);
+    logger.error("Webhook rejected: Invalid legacy secret");
+    return c.json({ error: "Invalid webhook secret" }, 401);
   }
 
   // No authentication provided
-  logger.error('Webhook rejected: No authentication provided');
+  logger.error("Webhook rejected: No authentication provided");
   return c.json(
     {
-      error: 'Unauthorized: Missing webhook authentication',
-      hint: 'Provide X-Webhook-Signature and X-Webhook-Timestamp headers for HMAC auth',
+      error: "Unauthorized: Missing webhook authentication",
+      hint: "Provide X-Webhook-Signature and X-Webhook-Timestamp headers for HMAC auth",
     },
-    401
+    401,
   );
 }
 

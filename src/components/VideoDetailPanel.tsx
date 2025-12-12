@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import {
   X,
   Play,
@@ -21,9 +21,14 @@ import {
   Copy,
   FileDown,
   ChevronDown,
-} from 'lucide-react';
-import { Video, videosApi, analysesApi, Analysis } from '../services/api';
-import { exportAnalysis, copyToClipboard, generateMarkdown, AnalysisExportData } from '../services/export';
+} from "lucide-react";
+import { Video, videosApi, analysesApi, Analysis } from "../services/api";
+import {
+  exportAnalysis,
+  copyToClipboard,
+  generateMarkdown,
+  AnalysisExportData,
+} from "../services/export";
 
 interface VideoDetailPanelProps {
   video: Video;
@@ -38,64 +43,64 @@ interface ReportTypeOption {
   description: string;
   icon: React.ReactNode;
   color: string;
-  model: 'flash' | 'pro';
+  model: "flash" | "pro";
   estimatedTime: string;
 }
 
 const REPORT_TYPES: ReportTypeOption[] = [
   {
-    id: 'transcript',
-    label: 'Transcription',
-    description: 'Transcription complète mot à mot',
+    id: "transcript",
+    label: "Transcription",
+    description: "Transcription complète mot à mot",
     icon: <FileText size={20} />,
-    color: 'bg-gray-500/15 text-gray-300 border-gray-500/30',
-    model: 'flash',
-    estimatedTime: '~20s',
+    color: "bg-gray-500/15 text-gray-300 border-gray-500/30",
+    model: "flash",
+    estimatedTime: "~20s",
   },
   {
-    id: 'summary_short',
-    label: 'Résumé Express',
-    description: '5-10 points essentiels',
+    id: "summary_short",
+    label: "Résumé Express",
+    description: "5-10 points essentiels",
     icon: <Zap size={20} />,
-    color: 'bg-lime-muted dark:text-lime text-lime-dark border-lime/30',
-    model: 'flash',
-    estimatedTime: '~15s',
+    color: "bg-lime-muted dark:text-lime text-lime-dark border-lime/30",
+    model: "flash",
+    estimatedTime: "~15s",
   },
   {
-    id: 'summary_detailed',
-    label: 'Résumé Détaillé',
-    description: 'Analyse approfondie avec contexte',
+    id: "summary_detailed",
+    label: "Résumé Détaillé",
+    description: "Analyse approfondie avec contexte",
     icon: <BookOpen size={20} />,
-    color: 'bg-cyan-muted dark:text-cyan text-cyan-dark border-cyan/30',
-    model: 'pro',
-    estimatedTime: '~60s',
+    color: "bg-cyan-muted dark:text-cyan text-cyan-dark border-cyan/30",
+    model: "pro",
+    estimatedTime: "~60s",
   },
   {
-    id: 'lesson_card',
-    label: 'Lesson Card',
-    description: 'Fiche pédagogique complète',
+    id: "lesson_card",
+    label: "Lesson Card",
+    description: "Fiche pédagogique complète",
     icon: <GraduationCap size={20} />,
-    color: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-    model: 'pro',
-    estimatedTime: '~2min',
+    color: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+    model: "pro",
+    estimatedTime: "~2min",
   },
   {
-    id: 'actions',
+    id: "actions",
     label: "Plan d'Action",
-    description: 'Étapes concrètes et checklists',
+    description: "Étapes concrètes et checklists",
     icon: <CheckSquare size={20} />,
-    color: 'bg-green-500/15 text-green-400 border-green-500/30',
-    model: 'pro',
-    estimatedTime: '~50s',
+    color: "bg-green-500/15 text-green-400 border-green-500/30",
+    model: "pro",
+    estimatedTime: "~50s",
   },
   {
-    id: 'flashcards',
-    label: 'Flashcards',
-    description: 'Q&R pour mémorisation',
+    id: "flashcards",
+    label: "Flashcards",
+    description: "Q&R pour mémorisation",
     icon: <Layers size={20} />,
-    color: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-    model: 'flash',
-    estimatedTime: '~25s',
+    color: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+    model: "flash",
+    estimatedTime: "~25s",
   },
 ];
 
@@ -109,7 +114,7 @@ function formatViews(count: number): string {
 function parseDurationToSeconds(duration: string | null): number {
   if (!duration) return 600; // Default 10 min if no duration
 
-  const parts = duration.split(':').map(Number);
+  const parts = duration.split(":").map(Number);
 
   if (parts.length === 3) {
     // HH:MM:SS
@@ -123,7 +128,10 @@ function parseDurationToSeconds(duration: string | null): number {
 }
 
 // Calculate estimated time based on video duration
-function calculateEstimatedTime(videoDurationSeconds: number, analysisType: string): string {
+function calculateEstimatedTime(
+  videoDurationSeconds: number,
+  analysisType: string,
+): string {
   // Base time factors (per minute of video)
   const timeFactors: Record<string, number> = {
     transcript: 1.5, // ~1.5s per minute of video
@@ -141,7 +149,7 @@ function calculateEstimatedTime(videoDurationSeconds: number, analysisType: stri
   let estimatedSeconds = Math.ceil(videoDurationMinutes * factor);
 
   // Add overhead (API processing, N8N workflow, etc.)
-  const overhead = analysisType === 'lesson_card' ? 30 : 10;
+  const overhead = analysisType === "lesson_card" ? 30 : 10;
   estimatedSeconds += overhead;
 
   // Format output
@@ -153,15 +161,15 @@ function calculateEstimatedTime(videoDurationSeconds: number, analysisType: stri
   } else {
     const hours = Math.floor(estimatedSeconds / 3600);
     const minutes = Math.ceil((estimatedSeconds % 3600) / 60);
-    return `~${hours}h${minutes > 0 ? minutes + 'min' : ''}`;
+    return `~${hours}h${minutes > 0 ? minutes + "min" : ""}`;
   }
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+  return new Date(dateString).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   });
 }
 
@@ -177,9 +185,13 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generatingTypes, setGeneratingTypes] = useState<string[]>([]);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<'fr' | 'en'>('fr');
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(
+    null,
+  );
+  const [selectedLanguage, setSelectedLanguage] = useState<"fr" | "en">("fr");
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -195,7 +207,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
         const data = await analysesApi.listByVideo(video.id);
         setAnalyses(data);
       } catch (err) {
-        console.error('Error fetching analyses:', err);
+        console.error("Error fetching analyses:", err);
       } finally {
         setLoadingAnalyses(false);
       }
@@ -215,13 +227,16 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
         // Check if any generating types are now complete FOR THE SELECTED LANGUAGE
         // We track by type_language combo (e.g., "summary_short_en")
         const existingTypeLanguageCombos = data.map(
-          (a) => `${a.type}_${a.language || 'fr'}`
+          (a) => `${a.type}_${a.language || "fr"}`,
         );
         setGeneratingTypes((prev) =>
-          prev.filter((t) => !existingTypeLanguageCombos.includes(`${t}_${selectedLanguage}`))
+          prev.filter(
+            (t) =>
+              !existingTypeLanguageCombos.includes(`${t}_${selectedLanguage}`),
+          ),
         );
       } catch (err) {
-        console.error('Error polling analyses:', err);
+        console.error("Error polling analyses:", err);
       }
     }, 10000); // Poll every 10 seconds
 
@@ -242,7 +257,9 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
   }, [pollingInterval]);
 
   // Track existing analyses by type AND language (e.g., "summary_short_fr", "summary_short_en")
-  const existingTypeLanguageCombos = analyses.map((a) => `${a.type}_${a.language || 'fr'}`);
+  const existingTypeLanguageCombos = analyses.map(
+    (a) => `${a.type}_${a.language || "fr"}`,
+  );
 
   // Check if a type exists for the currently selected language
   const isTypeExistingForLanguage = (typeId: string) =>
@@ -250,7 +267,9 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
 
   const toggleType = (typeId: string) => {
     setSelectedTypes((prev) =>
-      prev.includes(typeId) ? prev.filter((t) => t !== typeId) : [...prev, typeId]
+      prev.includes(typeId)
+        ? prev.filter((t) => t !== typeId)
+        : [...prev, typeId],
     );
   };
 
@@ -265,7 +284,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
           `Recommandations:\n` +
           `- Les vidéos de 30-60 min peuvent fonctionner pour les analyses courtes (Résumé Express, Transcription)\n` +
           `- Les vidéos de 60+ min risquent d'échouer pour toutes les analyses\n\n` +
-          `Voulez-vous continuer quand même?`
+          `Voulez-vous continuer quand même?`,
       );
 
       if (!confirmLong) {
@@ -287,7 +306,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
       // Show success feedback
       setError(null);
     } catch (err) {
-      console.error('Error starting analysis:', err);
+      console.error("Error starting analysis:", err);
       setError("Erreur lors du lancement de l'analyse");
     } finally {
       setIsAnalyzing(false);
@@ -302,14 +321,14 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
     type: analysis.type,
     content: analysis.content,
     videoTitle: video.title,
-    channelName: channelName || 'Unknown',
+    channelName: channelName || "Unknown",
     createdAt: analysis.created_at,
     videoUrl: youtubeUrl,
     duration: video.duration || undefined,
   });
 
   // Handle export actions
-  const handleExport = async (format: 'pdf' | 'markdown' | 'json') => {
+  const handleExport = async (format: "pdf" | "markdown" | "json") => {
     if (!selectedAnalysis) return;
 
     setIsExporting(true);
@@ -327,8 +346,8 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
         setTimeout(() => setError(null), 3000);
       }
     } catch (err) {
-      console.error('Export error:', err);
-      setError('Erreur lors de l\'export');
+      console.error("Export error:", err);
+      setError("Erreur lors de l'export");
       setTimeout(() => setError(null), 3000);
     } finally {
       setIsExporting(false);
@@ -345,10 +364,10 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
 
     const success = await copyToClipboard(markdown);
     if (success) {
-      setExportSuccess('Copié dans le presse-papier !');
+      setExportSuccess("Copié dans le presse-papier !");
       setTimeout(() => setExportSuccess(null), 3000);
     } else {
-      setError('Erreur lors de la copie');
+      setError("Erreur lors de la copie");
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -368,17 +387,23 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
       {/* Panel */}
       <motion.div
         className="relative w-full max-w-xl h-full bg-white dark:bg-dark-900 border-l border-light-border dark:border-dark-border overflow-y-auto"
-        initial={{ x: '100%' }}
+        initial={{ x: "100%" }}
         animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white/95 dark:bg-dark-900/95 backdrop-blur-sm border-b border-light-border dark:border-dark-border p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">{video.title}</h2>
-              {channelName && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{channelName}</p>}
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
+                {video.title}
+              </h2>
+              {channelName && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {channelName}
+                </p>
+              )}
             </div>
             <motion.button
               onClick={onClose}
@@ -411,10 +436,12 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const typeConfig = REPORT_TYPES.find((t) => t.id === selectedAnalysis.type);
+                      const typeConfig = REPORT_TYPES.find(
+                        (t) => t.id === selectedAnalysis.type,
+                      );
                       return (
                         <div
-                          className={`p-2 rounded-lg ${typeConfig?.color || 'bg-gray-500/15 text-gray-500 dark:text-gray-300'}`}
+                          className={`p-2 rounded-lg ${typeConfig?.color || "bg-gray-500/15 text-gray-500 dark:text-gray-300"}`}
                         >
                           {typeConfig?.icon || <FileText size={20} />}
                         </div>
@@ -422,18 +449,19 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                     })()}
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {REPORT_TYPES.find((t) => t.id === selectedAnalysis.type)?.label ||
-                          selectedAnalysis.type}
+                        {REPORT_TYPES.find(
+                          (t) => t.id === selectedAnalysis.type,
+                        )?.label || selectedAnalysis.type}
                       </h3>
                       {/* Language Badge */}
                       <span
                         className={`px-2 py-1 text-xs font-bold rounded ${
-                          (selectedAnalysis.language || 'fr') === 'en'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-lime/20 dark:text-lime text-lime-dark'
+                          (selectedAnalysis.language || "fr") === "en"
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "bg-lime/20 dark:text-lime text-lime-dark"
                         }`}
                       >
-                        {(selectedAnalysis.language || 'fr').toUpperCase()}
+                        {(selectedAnalysis.language || "fr").toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -453,7 +481,10 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                         <Download size={16} />
                       )}
                       <span className="text-sm">Exporter</span>
-                      <ChevronDown size={14} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform ${showExportMenu ? "rotate-180" : ""}`}
+                      />
                     </motion.button>
 
                     {/* Dropdown Menu */}
@@ -467,33 +498,39 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                           className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-dark-800 border border-light-border dark:border-dark-border rounded-xl shadow-lg dark:shadow-none overflow-hidden z-20"
                         >
                           <button
-                            onClick={() => handleExport('pdf')}
+                            onClick={() => handleExport("pdf")}
                             className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-light-100 dark:hover:bg-dark-700 transition-colors text-left"
                           >
                             <FileDown size={18} className="text-red-500" />
                             <div>
                               <p className="text-sm font-medium">PDF</p>
-                              <p className="text-xs text-gray-500">Document formaté</p>
+                              <p className="text-xs text-gray-500">
+                                Document formaté
+                              </p>
                             </div>
                           </button>
                           <button
-                            onClick={() => handleExport('markdown')}
+                            onClick={() => handleExport("markdown")}
                             className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-light-100 dark:hover:bg-dark-700 transition-colors text-left"
                           >
                             <FileText size={18} className="text-blue-500" />
                             <div>
                               <p className="text-sm font-medium">Markdown</p>
-                              <p className="text-xs text-gray-500">Fichier .md</p>
+                              <p className="text-xs text-gray-500">
+                                Fichier .md
+                              </p>
                             </div>
                           </button>
                           <button
-                            onClick={() => handleExport('json')}
+                            onClick={() => handleExport("json")}
                             className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-light-100 dark:hover:bg-dark-700 transition-colors text-left"
                           >
                             <FileText size={18} className="text-yellow-500" />
                             <div>
                               <p className="text-sm font-medium">JSON</p>
-                              <p className="text-xs text-gray-500">Données brutes</p>
+                              <p className="text-xs text-gray-500">
+                                Données brutes
+                              </p>
                             </div>
                           </button>
                           <div className="border-t border-light-border dark:border-dark-border" />
@@ -501,10 +538,15 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                             onClick={handleCopyToClipboard}
                             className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-light-100 dark:hover:bg-dark-700 transition-colors text-left"
                           >
-                            <Copy size={18} className="dark:text-lime text-lime-dark" />
+                            <Copy
+                              size={18}
+                              className="dark:text-lime text-lime-dark"
+                            />
                             <div>
                               <p className="text-sm font-medium">Copier</p>
-                              <p className="text-xs text-gray-500">Presse-papier</p>
+                              <p className="text-xs text-gray-500">
+                                Presse-papier
+                              </p>
                             </div>
                           </button>
                         </motion.div>
@@ -514,14 +556,17 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                 </div>
 
                 <p className="text-sm text-gray-500 dark:text-gray-500">
-                  Généré le{' '}
-                  {new Date(selectedAnalysis.created_at).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  Généré le{" "}
+                  {new Date(selectedAnalysis.created_at).toLocaleDateString(
+                    "fr-FR",
+                    {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}
                 </p>
 
                 {/* Export Success Message */}
@@ -557,25 +602,41 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                         </h2>
                       ),
                       h3: ({ children }) => (
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 mt-4">{children}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 mt-4">
+                          {children}
+                        </h3>
                       ),
                       p: ({ children }) => (
-                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">{children}</p>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                          {children}
+                        </p>
                       ),
-                      ul: ({ children }) => <ul className="space-y-2 mb-4 ml-1">{children}</ul>,
+                      ul: ({ children }) => (
+                        <ul className="space-y-2 mb-4 ml-1">{children}</ul>
+                      ),
                       ol: ({ children }) => (
-                        <ol className="space-y-2 mb-4 ml-1 list-decimal list-inside">{children}</ol>
+                        <ol className="space-y-2 mb-4 ml-1 list-decimal list-inside">
+                          {children}
+                        </ol>
                       ),
                       li: ({ children }) => (
                         <li className="flex items-start gap-2 text-gray-600 dark:text-gray-300">
-                          <span className="dark:text-lime text-lime-dark mt-1.5 flex-shrink-0">•</span>
+                          <span className="dark:text-lime text-lime-dark mt-1.5 flex-shrink-0">
+                            •
+                          </span>
                           <span>{children}</span>
                         </li>
                       ),
                       strong: ({ children }) => (
-                        <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>
+                        <strong className="font-semibold text-gray-900 dark:text-white">
+                          {children}
+                        </strong>
                       ),
-                      em: ({ children }) => <em className="italic dark:text-cyan/90 text-cyan-dark/90">{children}</em>,
+                      em: ({ children }) => (
+                        <em className="italic dark:text-cyan/90 text-cyan-dark/90">
+                          {children}
+                        </em>
+                      ),
                       blockquote: ({ children }) => (
                         <blockquote className="border-l-4 border-lime/50 pl-4 py-2 my-4 bg-lime/5 rounded-r-lg italic text-gray-600 dark:text-gray-300">
                           {children}
@@ -591,7 +652,9 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                           {children}
                         </pre>
                       ),
-                      hr: () => <hr className="border-light-border dark:border-dark-border my-6" />,
+                      hr: () => (
+                        <hr className="border-light-border dark:border-dark-border my-6" />
+                      ),
                       a: ({ href, children }) => (
                         <a
                           href={href}
@@ -614,12 +677,12 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
               {/* Thumbnail & Quick Actions */}
               <div className="relative aspect-video rounded-xl overflow-hidden bg-light-200 dark:bg-dark-800">
                 <img
-                  src={video.thumbnail_url || ''}
+                  src={video.thumbnail_url || ""}
                   alt={video.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      'https://via.placeholder.com/640x360/1a1a1a/666?text=Video';
+                      "https://via.placeholder.com/640x360/1a1a1a/666?text=Video";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -646,10 +709,15 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  whileHover={{ scale: 1.05, borderColor: '#ABF43F' }}
+                  whileHover={{ scale: 1.05, borderColor: "#ABF43F" }}
                 >
-                  <Eye size={18} className="mx-auto text-gray-500 dark:text-gray-400 mb-1" />
-                  <p className="text-gray-900 dark:text-white font-medium">{formatViews(video.view_count)}</p>
+                  <Eye
+                    size={18}
+                    className="mx-auto text-gray-500 dark:text-gray-400 mb-1"
+                  />
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    {formatViews(video.view_count)}
+                  </p>
                   <p className="text-xs text-gray-500">vues</p>
                 </motion.div>
                 <motion.div
@@ -657,10 +725,15 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  whileHover={{ scale: 1.05, borderColor: '#3FF4E5' }}
+                  whileHover={{ scale: 1.05, borderColor: "#3FF4E5" }}
                 >
-                  <ThumbsUp size={18} className="mx-auto text-gray-500 dark:text-gray-400 mb-1" />
-                  <p className="text-gray-900 dark:text-white font-medium">{formatViews(video.like_count)}</p>
+                  <ThumbsUp
+                    size={18}
+                    className="mx-auto text-gray-500 dark:text-gray-400 mb-1"
+                  />
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    {formatViews(video.like_count)}
+                  </p>
                   <p className="text-xs text-gray-500">likes</p>
                 </motion.div>
                 <motion.div
@@ -668,10 +741,15 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  whileHover={{ scale: 1.05, borderColor: '#ABF43F' }}
+                  whileHover={{ scale: 1.05, borderColor: "#ABF43F" }}
                 >
-                  <Calendar size={18} className="mx-auto text-gray-500 dark:text-gray-400 mb-1" />
-                  <p className="text-gray-900 dark:text-white font-medium text-sm">{formatDate(video.published_at)}</p>
+                  <Calendar
+                    size={18}
+                    className="mx-auto text-gray-500 dark:text-gray-400 mb-1"
+                  />
+                  <p className="text-gray-900 dark:text-white font-medium text-sm">
+                    {formatDate(video.published_at)}
+                  </p>
                   <p className="text-xs text-gray-500">publié</p>
                 </motion.div>
               </div>
@@ -679,23 +757,30 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
               {/* Existing Analyses & Generating */}
               {loadingAnalyses ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader2 size={20} className="animate-spin dark:text-lime text-lime-dark" />
+                  <Loader2
+                    size={20}
+                    className="animate-spin dark:text-lime text-lime-dark"
+                  />
                 </div>
               ) : (
                 (analyses.length > 0 || generatingTypes.length > 0) && (
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Analyses existantes</h3>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Analyses existantes
+                    </h3>
                     <div className="space-y-2">
                       {/* Generating Analyses - Show first */}
                       {generatingTypes.map((typeId, index) => {
-                        const typeConfig = REPORT_TYPES.find((t) => t.id === typeId);
+                        const typeConfig = REPORT_TYPES.find(
+                          (t) => t.id === typeId,
+                        );
                         return (
                           <motion.div
                             key={`generating-${typeId}`}
                             onClick={() => {
                               // Show message that it's still generating
                               setError(
-                                'Cette analyse est en cours de génération. Veuillez patienter...'
+                                "Cette analyse est en cours de génération. Veuillez patienter...",
                               );
                               setTimeout(() => setError(null), 3000);
                             }}
@@ -706,7 +791,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                             whileHover={{ scale: 1.02, x: 4 }}
                           >
                             <div
-                              className={`p-2 rounded-lg ${typeConfig?.color || 'bg-gray-500/15 text-gray-300'}`}
+                              className={`p-2 rounded-lg ${typeConfig?.color || "bg-gray-500/15 text-gray-300"}`}
                             >
                               {typeConfig?.icon || <FileText size={18} />}
                             </div>
@@ -714,17 +799,24 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                               <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {typeConfig?.label || typeId}
                               </p>
-                              <p className="text-xs text-lime-dark dark:text-lime">⏳ Génération en cours...</p>
+                              <p className="text-xs text-lime-dark dark:text-lime">
+                                ⏳ Génération en cours...
+                              </p>
                             </div>
-                            <Loader2 size={16} className="dark:text-lime text-lime-dark animate-spin" />
+                            <Loader2
+                              size={16}
+                              className="dark:text-lime text-lime-dark animate-spin"
+                            />
                           </motion.div>
                         );
                       })}
 
                       {/* Completed Analyses */}
                       {analyses.map((analysis, index) => {
-                        const typeConfig = REPORT_TYPES.find((t) => t.id === analysis.type);
-                        const analysisLanguage = analysis.language || 'fr';
+                        const typeConfig = REPORT_TYPES.find(
+                          (t) => t.id === analysis.type,
+                        );
+                        const analysisLanguage = analysis.language || "fr";
                         return (
                           <motion.div
                             key={analysis.id}
@@ -732,12 +824,18 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                             className="flex items-center gap-3 p-3 bg-white dark:bg-dark-800 border border-light-border dark:border-dark-border rounded-xl hover:border-lime/30 cursor-pointer transition-colors shadow-sm dark:shadow-none"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: generatingTypes.length * 0.1 + index * 0.1 }}
-                            whileHover={{ scale: 1.02, x: 4, borderColor: '#ABF43F4D' }}
+                            transition={{
+                              delay: generatingTypes.length * 0.1 + index * 0.1,
+                            }}
+                            whileHover={{
+                              scale: 1.02,
+                              x: 4,
+                              borderColor: "#ABF43F4D",
+                            }}
                             whileTap={{ scale: 0.98 }}
                           >
                             <div
-                              className={`p-2 rounded-lg ${typeConfig?.color || 'bg-gray-500/15 text-gray-300'}`}
+                              className={`p-2 rounded-lg ${typeConfig?.color || "bg-gray-500/15 text-gray-300"}`}
                             >
                               {typeConfig?.icon || <FileText size={18} />}
                             </div>
@@ -749,19 +847,24 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                                 {/* Language Badge */}
                                 <span
                                   className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
-                                    analysisLanguage === 'en'
-                                      ? 'bg-blue-500/20 text-blue-400'
-                                      : 'bg-lime/20 dark:text-lime text-lime-dark'
+                                    analysisLanguage === "en"
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : "bg-lime/20 dark:text-lime text-lime-dark"
                                   }`}
                                 >
                                   {analysisLanguage.toUpperCase()}
                                 </span>
                               </div>
                               <p className="text-xs text-gray-500">
-                                {new Date(analysis.created_at).toLocaleDateString('fr-FR')}
+                                {new Date(
+                                  analysis.created_at,
+                                ).toLocaleDateString("fr-FR")}
                               </p>
                             </div>
-                            <Check size={16} className="dark:text-lime text-lime-dark" />
+                            <Check
+                              size={16}
+                              className="dark:text-lime text-lime-dark"
+                            />
                           </motion.div>
                         );
                       })}
@@ -773,24 +876,29 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
               {/* Analysis Type Selection */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Générer des analyses</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Générer des analyses
+                  </h3>
                   <span className="text-xs text-gray-500">
-                    {selectedTypes.length} sélectionné{selectedTypes.length > 1 ? 's' : ''}
+                    {selectedTypes.length} sélectionné
+                    {selectedTypes.length > 1 ? "s" : ""}
                   </span>
                 </div>
 
                 {/* Language Toggle */}
                 <div className="flex items-center justify-between p-3 bg-white dark:bg-dark-800 border border-light-border dark:border-dark-border rounded-xl shadow-sm dark:shadow-none">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Langue de l'analyse</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Langue de l'analyse
+                  </span>
                   <div className="flex items-center gap-1 p-1 bg-light-200 dark:bg-dark-700 rounded-lg">
                     <motion.button
-                      onClick={() => setSelectedLanguage('fr')}
+                      onClick={() => setSelectedLanguage("fr")}
                       className={`
                     px-3 py-1.5 text-xs font-medium rounded-md transition-all
                     ${
-                      selectedLanguage === 'fr'
-                        ? 'bg-lime text-black shadow-lg shadow-lime/20'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      selectedLanguage === "fr"
+                        ? "bg-lime text-black shadow-lg shadow-lime/20"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }
                   `}
                       whileHover={{ scale: 1.05 }}
@@ -799,13 +907,13 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                       FR
                     </motion.button>
                     <motion.button
-                      onClick={() => setSelectedLanguage('en')}
+                      onClick={() => setSelectedLanguage("en")}
                       className={`
                     px-3 py-1.5 text-xs font-medium rounded-md transition-all
                     ${
-                      selectedLanguage === 'en'
-                        ? 'bg-lime text-black shadow-lg shadow-lime/20'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      selectedLanguage === "en"
+                        ? "bg-lime text-black shadow-lg shadow-lime/20"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }
                   `}
                       whileHover={{ scale: 1.05 }}
@@ -819,10 +927,13 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   {REPORT_TYPES.map((type, index) => {
                     const isSelected = selectedTypes.includes(type.id);
-                    const isExistingForCurrentLanguage = isTypeExistingForLanguage(type.id);
+                    const isExistingForCurrentLanguage =
+                      isTypeExistingForLanguage(type.id);
                     const isLongVideo = videoDurationSeconds > 1800; // >30 min
                     const isRiskyForLongVideo =
-                      isLongVideo && (type.id === 'lesson_card' || type.id === 'summary_detailed');
+                      isLongVideo &&
+                      (type.id === "lesson_card" ||
+                        type.id === "summary_detailed");
 
                     return (
                       <motion.button
@@ -832,10 +943,10 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                       relative flex flex-col items-start p-3 rounded-xl border-2 transition-all text-left
                       ${
                         isSelected
-                          ? 'bg-lime/10 border-lime shadow-lg shadow-lime/10'
-                          : 'bg-white dark:bg-dark-800 border-light-border dark:border-dark-border hover:border-gray-400 dark:hover:border-gray-500 shadow-sm dark:shadow-none'
+                          ? "bg-lime/10 border-lime shadow-lg shadow-lime/10"
+                          : "bg-white dark:bg-dark-800 border-light-border dark:border-dark-border hover:border-gray-400 dark:hover:border-gray-500 shadow-sm dark:shadow-none"
                       }
-                      ${isRiskyForLongVideo ? 'opacity-75' : ''}
+                      ${isRiskyForLongVideo ? "opacity-75" : ""}
                     `}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -852,11 +963,12 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                         )}
 
                         {/* Badge "Risqué" pour analyses longues sur vidéos longues */}
-                        {isRiskyForLongVideo && !isExistingForCurrentLanguage && (
-                          <span className="absolute -top-1.5 -right-1.5 flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-lg">
-                            ⚠️ Risqué
-                          </span>
-                        )}
+                        {isRiskyForLongVideo &&
+                          !isExistingForCurrentLanguage && (
+                            <span className="absolute -top-1.5 -right-1.5 flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-lg">
+                              ⚠️ Risqué
+                            </span>
+                          )}
 
                         {/* Indicateur de sélection */}
                         {isSelected && (
@@ -868,20 +980,27 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                         )}
 
                         {/* Icône toujours colorée selon le type */}
-                        <div className={`p-1.5 rounded-lg mb-2 ${type.color}`}>{type.icon}</div>
+                        <div className={`p-1.5 rounded-lg mb-2 ${type.color}`}>
+                          {type.icon}
+                        </div>
 
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{type.label}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {type.label}
+                        </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 line-clamp-1">
                           {type.description}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded ${type.model === 'pro' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-400'}`}
+                            className={`text-xs px-1.5 py-0.5 rounded ${type.model === "pro" ? "bg-purple-500/20 text-purple-400" : "bg-gray-500/20 text-gray-400"}`}
                           >
                             {type.model}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {calculateEstimatedTime(videoDurationSeconds, type.id)}
+                            {calculateEstimatedTime(
+                              videoDurationSeconds,
+                              type.id,
+                            )}
                           </span>
                         </div>
                       </motion.button>
@@ -903,8 +1022,12 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                 onClick={handleAnalyze}
                 disabled={selectedTypes.length === 0 || isAnalyzing}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lime hover:bg-lime-hover text-black font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: selectedTypes.length > 0 && !isAnalyzing ? 1.02 : 1 }}
-                whileTap={{ scale: selectedTypes.length > 0 && !isAnalyzing ? 0.98 : 1 }}
+                whileHover={{
+                  scale: selectedTypes.length > 0 && !isAnalyzing ? 1.02 : 1,
+                }}
+                whileTap={{
+                  scale: selectedTypes.length > 0 && !isAnalyzing ? 0.98 : 1,
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
@@ -918,7 +1041,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                   <>
                     <Sparkles size={20} />
                     Lancer l'analyse ({selectedTypes.length} type
-                    {selectedTypes.length > 1 ? 's' : ''})
+                    {selectedTypes.length > 1 ? "s" : ""})
                   </>
                 )}
               </motion.button>
@@ -926,7 +1049,9 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
               {/* Description */}
               {video.description && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Description
+                  </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap line-clamp-6">
                     {video.description}
                   </p>

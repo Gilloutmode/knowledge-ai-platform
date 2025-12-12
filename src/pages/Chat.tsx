@@ -1,5 +1,5 @@
-import { MessageSquare, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { MessageSquare, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function ChatPage() {
   const navigate = useNavigate();
@@ -20,7 +20,9 @@ export function ChatPage() {
             <MessageSquare size={24} className="text-lime" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold dark:text-white text-gray-900">Chat RAG</h1>
+            <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+              Chat RAG
+            </h1>
             <p className="dark:text-gray-400 text-gray-600">
               Discutez avec votre base de connaissances
             </p>
@@ -37,8 +39,8 @@ export function ChatPage() {
           Bientôt disponible
         </h2>
         <p className="dark:text-gray-400 text-gray-500 max-w-md mx-auto">
-          L'interface de chat RAG vous permettra de poser des questions sur vos contenus
-          et d'obtenir des réponses contextualisées avec citations.
+          L'interface de chat RAG vous permettra de poser des questions sur vos
+          contenus et d'obtenir des réponses contextualisées avec citations.
         </p>
       </div>
     </div>

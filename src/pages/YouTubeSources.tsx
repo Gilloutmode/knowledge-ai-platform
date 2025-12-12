@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Youtube,
   Plus,
@@ -14,8 +14,8 @@ import {
   Loader2,
   Search,
   ChevronRight,
-} from 'lucide-react';
-import { channelsApi, Channel } from '../services/api';
+} from "lucide-react";
+import { channelsApi, Channel } from "../services/api";
 
 // Format subscriber count for display
 function formatSubscribers(count: number): string {
@@ -83,8 +83,11 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
                   disabled={isRefreshing}
                   className="w-full px-3 py-2 text-left text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-600 hover:bg-light-100 flex items-center gap-2 disabled:opacity-50"
                 >
-                  <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                  {isRefreshing ? 'Mise à jour...' : 'Rafraîchir vidéos'}
+                  <RefreshCw
+                    size={14}
+                    className={isRefreshing ? "animate-spin" : ""}
+                  />
+                  {isRefreshing ? "Mise à jour..." : "Rafraîchir vidéos"}
                 </button>
                 <button
                   onClick={() => {
@@ -114,11 +117,11 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
           <img
             src={
               imageError
-                ? 'https://via.placeholder.com/80/1a1a1a/666?text=YT'
-                : channel.thumbnail_url || ''
+                ? "https://via.placeholder.com/80/1a1a1a/666?text=YT"
+                : channel.thumbnail_url || ""
             }
             alt={channel.name}
-            className={`w-full h-full object-cover transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover transition-opacity ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             onLoad={() => setImageLoaded(true)}
             onError={() => {
               setImageError(true);
@@ -181,7 +184,7 @@ export function YouTubeSourcesPage() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchChannels = async () => {
     try {
@@ -189,8 +192,8 @@ export function YouTubeSourcesPage() {
       setChannels(data);
       setError(null);
     } catch (err) {
-      setError('Impossible de charger les chaînes');
-      console.error('Error fetching channels:', err);
+      setError("Impossible de charger les chaînes");
+      console.error("Error fetching channels:", err);
     } finally {
       setIsLoading(false);
     }
@@ -201,16 +204,21 @@ export function YouTubeSourcesPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette chaîne et toutes ses vidéos ?')) return;
+    if (
+      !confirm(
+        "Êtes-vous sûr de vouloir supprimer cette chaîne et toutes ses vidéos ?",
+      )
+    )
+      return;
 
     try {
       await channelsApi.delete(id);
       setChannels(channels.filter((c) => c.id !== id));
-      setSuccessMessage('Chaîne supprimée avec succès');
+      setSuccessMessage("Chaîne supprimée avec succès");
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      console.error('Error deleting channel:', err);
-      setError('Impossible de supprimer la chaîne');
+      console.error("Error deleting channel:", err);
+      setError("Impossible de supprimer la chaîne");
     }
   };
 
@@ -220,11 +228,13 @@ export function YouTubeSourcesPage() {
     try {
       const result = await channelsApi.refreshVideos(id);
       const channel = channels.find((c) => c.id === id);
-      setSuccessMessage(`${result.updated} vidéos mises à jour pour ${channel?.name || 'la chaîne'}`);
+      setSuccessMessage(
+        `${result.updated} vidéos mises à jour pour ${channel?.name || "la chaîne"}`,
+      );
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      console.error('Error refreshing videos:', err);
-      setError('Impossible de rafraîchir les vidéos');
+      console.error("Error refreshing videos:", err);
+      setError("Impossible de rafraîchir les vidéos");
     } finally {
       setRefreshingId(null);
     }
@@ -235,14 +245,18 @@ export function YouTubeSourcesPage() {
   };
 
   // Calculate total videos
-  const totalVideos = channels.reduce((acc, ch) => acc + (ch.video_count || 0), 0);
+  const totalVideos = channels.reduce(
+    (acc, ch) => acc + (ch.video_count || 0),
+    0,
+  );
 
   // Filter channels
   const filteredChannels = searchQuery
     ? channels.filter(
         (c) =>
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (c.niche && c.niche.toLowerCase().includes(searchQuery.toLowerCase()))
+          (c.niche &&
+            c.niche.toLowerCase().includes(searchQuery.toLowerCase())),
       )
     : channels;
 
@@ -259,7 +273,7 @@ export function YouTubeSourcesPage() {
       {/* Breadcrumb & Header */}
       <div>
         <button
-          onClick={() => navigate('/sources')}
+          onClick={() => navigate("/sources")}
           className="flex items-center gap-2 dark:text-gray-400 text-gray-600 hover:text-red-500 transition-colors mb-4"
         >
           <ArrowLeft size={18} />
@@ -272,14 +286,17 @@ export function YouTubeSourcesPage() {
               <Youtube size={24} className="text-red-500" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold dark:text-white text-gray-900">YouTube</h1>
+              <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+                YouTube
+              </h1>
               <p className="dark:text-gray-400 text-gray-600">
-                {channels.length} chaîne{channels.length !== 1 ? 's' : ''} • {totalVideos.toLocaleString()} vidéos
+                {channels.length} chaîne{channels.length !== 1 ? "s" : ""} •{" "}
+                {totalVideos.toLocaleString()} vidéos
               </p>
             </div>
           </div>
           <button
-            onClick={() => navigate('/add-channel')}
+            onClick={() => navigate("/add-channel")}
             className="btn btn-primary flex items-center gap-2"
           >
             <Plus size={18} />
@@ -298,7 +315,10 @@ export function YouTubeSourcesPage() {
             className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 flex items-center justify-between"
           >
             <span>✅ {successMessage}</span>
-            <button onClick={() => setSuccessMessage(null)} className="hover:text-green-300">
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="hover:text-green-300"
+            >
               ×
             </button>
           </motion.div>
@@ -312,7 +332,10 @@ export function YouTubeSourcesPage() {
             className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center justify-between"
           >
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="hover:text-red-300">
+            <button
+              onClick={() => setError(null)}
+              className="hover:text-red-300"
+            >
               ×
             </button>
           </motion.div>
@@ -348,7 +371,10 @@ export function YouTubeSourcesPage() {
           <p className="dark:text-gray-400 text-gray-500 mb-6">
             Commencez par ajouter une chaîne YouTube à suivre
           </p>
-          <button onClick={() => navigate('/add-channel')} className="btn btn-primary">
+          <button
+            onClick={() => navigate("/add-channel")}
+            className="btn btn-primary"
+          >
             <Plus size={18} />
             Ajouter une chaîne
           </button>
@@ -388,7 +414,7 @@ export function YouTubeSourcesPage() {
 
           {/* Add Card */}
           <motion.button
-            onClick={() => navigate('/add-channel')}
+            onClick={() => navigate("/add-channel")}
             className="border-2 border-dashed dark:border-dark-border border-light-border rounded-xl p-8 flex flex-col items-center justify-center gap-3 dark:text-gray-500 text-gray-400 hover:border-red-500/50 dark:hover:text-red-400 hover:text-red-500 transition-all min-h-[180px]"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

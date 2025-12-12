@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Youtube,
   Plus,
@@ -10,8 +10,8 @@ import {
   Trash2,
   RefreshCw,
   Loader2,
-} from 'lucide-react';
-import { channelsApi, Channel } from '../services/api';
+} from "lucide-react";
+import { channelsApi, Channel } from "../services/api";
 
 interface ChannelCardProps {
   channel: Channel;
@@ -71,7 +71,9 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       className="relative group"
       style={{
         transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
-        transition: isHovered ? 'none' : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+        transition: isHovered
+          ? "none"
+          : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
       }}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
@@ -94,7 +96,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
             <motion.div
               className="w-16 h-16 rounded-full overflow-hidden dark:bg-dark-700 bg-light-200 flex-shrink-0 relative"
               whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 300 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
               {/* Glow effect on hover */}
               <div className="absolute -inset-1 bg-gradient-to-r from-lime to-cyan rounded-full opacity-0 group-hover:opacity-50 blur-md transition-opacity duration-300"></div>
@@ -107,11 +109,11 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
               <img
                 src={
                   imageError
-                    ? 'https://via.placeholder.com/64/1a1a1a/666?text=YT'
-                    : channel.thumbnail_url || ''
+                    ? "https://via.placeholder.com/64/1a1a1a/666?text=YT"
+                    : channel.thumbnail_url || ""
                 }
                 alt={channel.name}
-                className={`relative z-10 w-full h-full object-cover transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className={`relative z-10 w-full h-full object-cover transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => {
                   setImageError(true);
@@ -137,7 +139,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
                       className="inline-block mt-1 px-2 py-0.5 bg-lime-muted dark:text-lime text-lime-dark text-xs font-medium rounded-full"
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2, type: 'spring' }}
+                      transition={{ delay: 0.2, type: "spring" }}
                       whileHover={{ scale: 1.1 }}
                     >
                       {channel.niche}
@@ -186,9 +188,11 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
                         >
                           <RefreshCw
                             size={14}
-                            className={isRefreshingStats ? 'animate-spin' : ''}
+                            className={isRefreshingStats ? "animate-spin" : ""}
                           />
-                          {isRefreshingStats ? 'Mise à jour...' : 'Rafraîchir stats vidéos'}
+                          {isRefreshingStats
+                            ? "Mise à jour..."
+                            : "Rafraîchir stats vidéos"}
                         </motion.button>
                         <motion.button
                           onClick={() => {
@@ -216,14 +220,14 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
               >
                 <motion.span
                   className="flex items-center gap-1"
-                  whileHover={{ scale: 1.05, color: '#ABF43F' }}
+                  whileHover={{ scale: 1.05, color: "#ABF43F" }}
                 >
                   <Users size={14} />
                   {formatSubscribers(channel.subscriber_count)}
                 </motion.span>
                 <motion.span
                   className="flex items-center gap-1"
-                  whileHover={{ scale: 1.05, color: '#3FF4E5' }}
+                  whileHover={{ scale: 1.05, color: "#3FF4E5" }}
                 >
                   <Video size={14} />
                   {channel.video_count} vidéos
@@ -236,7 +240,8 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                Ajoutée le {new Date(channel.created_at).toLocaleDateString('fr-FR')}
+                Ajoutée le{" "}
+                {new Date(channel.created_at).toLocaleDateString("fr-FR")}
               </motion.p>
             </div>
           </div>
@@ -280,9 +285,9 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
                   key={i}
                   className="absolute w-1 h-1 rounded-full pointer-events-none"
                   style={{
-                    background: i % 2 === 0 ? '#ABF43F' : '#3FF4E5',
-                    left: '50%',
-                    top: '50%',
+                    background: i % 2 === 0 ? "#ABF43F" : "#3FF4E5",
+                    left: "50%",
+                    top: "50%",
                   }}
                   initial={{ x: 0, y: 0, opacity: 0 }}
                   animate={{
@@ -311,11 +316,16 @@ interface ChannelsPageProps {
   searchQuery?: string;
 }
 
-export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQuery = '' }) => {
+export const ChannelsPage: React.FC<ChannelsPageProps> = ({
+  onNavigate,
+  searchQuery = "",
+}) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshingStatsId, setRefreshingStatsId] = useState<string | null>(null);
+  const [refreshingStatsId, setRefreshingStatsId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -328,8 +338,8 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
       }
     } catch (err) {
       if (!signal?.aborted) {
-        setError('Impossible de charger les chaînes');
-        console.error('Error fetching channels:', err);
+        setError("Impossible de charger les chaînes");
+        console.error("Error fetching channels:", err);
       }
     } finally {
       if (!signal?.aborted) {
@@ -353,13 +363,13 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette chaîne ?')) return;
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette chaîne ?")) return;
 
     try {
       await channelsApi.delete(id);
       setChannels(channels.filter((c) => c.id !== id));
     } catch (err) {
-      console.error('Error deleting channel:', err);
+      console.error("Error deleting channel:", err);
     }
   };
 
@@ -368,7 +378,7 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
       await channelsApi.refresh(id);
       // Optionally show a toast or update the UI
     } catch (err) {
-      console.error('Error refreshing channel:', err);
+      console.error("Error refreshing channel:", err);
     }
   };
 
@@ -380,20 +390,20 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
       const result = await channelsApi.refreshVideos(id);
       const channel = channels.find((c) => c.id === id);
       setSuccessMessage(
-        `✅ ${result.updated} vidéos mises à jour pour ${channel?.name || 'la chaîne'}`
+        `✅ ${result.updated} vidéos mises à jour pour ${channel?.name || "la chaîne"}`,
       );
       // Auto-hide success message after 5 seconds
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      console.error('Error refreshing video stats:', err);
-      setError('Impossible de rafraîchir les statistiques des vidéos');
+      console.error("Error refreshing video stats:", err);
+      setError("Impossible de rafraîchir les statistiques des vidéos");
     } finally {
       setRefreshingStatsId(null);
     }
   };
 
   const handleViewVideos = (channelId: string) => {
-    onNavigate('/videos', channelId);
+    onNavigate("/videos", channelId);
   };
 
   // Filter channels based on search query
@@ -401,14 +411,18 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
     ? channels.filter(
         (c) =>
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (c.niche && c.niche.toLowerCase().includes(searchQuery.toLowerCase()))
+          (c.niche &&
+            c.niche.toLowerCase().includes(searchQuery.toLowerCase())),
       )
     : channels;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={32} className="animate-spin dark:text-lime text-lime-dark" />
+        <Loader2
+          size={32}
+          className="animate-spin dark:text-lime text-lime-dark"
+        />
       </div>
     );
   }
@@ -418,18 +432,30 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Mes Chaînes</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+            Mes Chaînes
+          </h1>
           <p className="dark:text-gray-400 text-gray-500 mt-1">
-            {channels.length} chaîne{channels.length !== 1 ? 's' : ''} suivie
-            {channels.length !== 1 ? 's' : ''}
+            {channels.length} chaîne{channels.length !== 1 ? "s" : ""} suivie
+            {channels.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleRefreshAll} disabled={isRefreshing} className="btn btn-secondary">
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          <button
+            onClick={handleRefreshAll}
+            disabled={isRefreshing}
+            className="btn btn-secondary"
+          >
+            <RefreshCw
+              size={18}
+              className={isRefreshing ? "animate-spin" : ""}
+            />
             Actualiser
           </button>
-          <button onClick={() => onNavigate('/add-channel')} className="btn btn-primary">
+          <button
+            onClick={() => onNavigate("/add-channel")}
+            className="btn btn-primary"
+          >
             <Plus size={18} />
             Ajouter une chaîne
           </button>
@@ -462,9 +488,16 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
           <div className="inline-flex p-4 bg-lime-muted rounded-2xl mb-4">
             <Youtube size={32} className="dark:text-lime text-lime-dark" />
           </div>
-          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucune chaîne</h2>
-          <p className="dark:text-gray-400 text-gray-500 mb-6">Commencez par ajouter une chaîne YouTube à suivre</p>
-          <button onClick={() => onNavigate('/add-channel')} className="btn btn-primary">
+          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+            Aucune chaîne
+          </h2>
+          <p className="dark:text-gray-400 text-gray-500 mb-6">
+            Commencez par ajouter une chaîne YouTube à suivre
+          </p>
+          <button
+            onClick={() => onNavigate("/add-channel")}
+            className="btn btn-primary"
+          >
             <Plus size={18} />
             Ajouter une chaîne
           </button>
@@ -477,8 +510,12 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
           <div className="inline-flex p-4 dark:bg-dark-700 bg-light-200 rounded-2xl mb-4">
             <Youtube size={32} className="dark:text-gray-500 text-gray-400" />
           </div>
-          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucun résultat</h2>
-          <p className="dark:text-gray-400 text-gray-500">Aucune chaîne ne correspond à "{searchQuery}"</p>
+          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+            Aucun résultat
+          </h2>
+          <p className="dark:text-gray-400 text-gray-500">
+            Aucune chaîne ne correspond à "{searchQuery}"
+          </p>
         </div>
       )}
 
@@ -499,7 +536,7 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
 
           {/* Add Card */}
           <motion.button
-            onClick={() => onNavigate('/add-channel')}
+            onClick={() => onNavigate("/add-channel")}
             className="relative border-2 border-dashed dark:border-dark-border border-light-border rounded-2xl p-8 flex flex-col items-center justify-center gap-3 dark:text-gray-500 text-gray-400 group overflow-hidden"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -516,9 +553,12 @@ export const ChannelsPage: React.FC<ChannelsPageProps> = ({ onNavigate, searchQu
             <motion.div
               className="relative w-12 h-12 rounded-full dark:bg-dark-700 bg-light-200 flex items-center justify-center group-hover:bg-lime/20 transition-colors duration-300"
               whileHover={{ rotate: 180 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ type: "spring", stiffness: 200 }}
             >
-              <Plus size={24} className="dark:group-hover:text-lime group-hover:text-lime-dark transition-colors" />
+              <Plus
+                size={24}
+                className="dark:group-hover:text-lime group-hover:text-lime-dark transition-colors"
+              />
             </motion.div>
             <span className="relative font-medium dark:group-hover:text-lime group-hover:text-lime-dark transition-colors">
               Ajouter une chaîne

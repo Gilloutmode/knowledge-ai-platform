@@ -7,7 +7,7 @@ export {
   type SortField,
   type SortOrder,
   type AnalysisStatus,
-} from './VideoFilters';
+} from "./VideoFilters";
 
 export {
   AnalysisFilters,
@@ -17,4 +17,4 @@ export {
   type AnalysisFilterState,
   type AnalysisType,
   type AnalysisSortField,
-} from './AnalysisFilters';
+} from "./AnalysisFilters";

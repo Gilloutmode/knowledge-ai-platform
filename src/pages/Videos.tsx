@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import { useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PlayCircle,
   Clock,
@@ -20,20 +26,26 @@ import {
   GraduationCap,
   CheckSquare,
   Layers,
-} from 'lucide-react';
-import { videosApi, channelsApi, analysesApi, Video, Channel } from '../services/api';
-import { VideoDetailPanel } from '../components/VideoDetailPanel';
+} from "lucide-react";
+import {
+  videosApi,
+  channelsApi,
+  analysesApi,
+  Video,
+  Channel,
+} from "../services/api";
+import { VideoDetailPanel } from "../components/VideoDetailPanel";
 import {
   AdvancedFilters,
   FilterState,
   filterByDateRange,
   sortItems,
-} from '../components/AdvancedFilters';
+} from "../components/AdvancedFilters";
 
 const VIDEOS_PER_PAGE = 20;
 
-type ViewMode = 'grid' | 'list';
-type StatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'failed';
+type ViewMode = "grid" | "list";
+type StatusFilter = "all" | "pending" | "processing" | "completed" | "failed";
 
 interface VideosPageProps {
   searchQuery?: string;
@@ -49,12 +61,16 @@ interface VideoCardProps {
 
 // Analysis types configuration
 const ANALYSIS_TYPES = [
-  { id: 'transcript', icon: FileText, color: 'text-gray-400' },
-  { id: 'summary_short', icon: Zap, color: 'dark:text-lime text-lime-dark' },
-  { id: 'summary_detailed', icon: BookOpen, color: 'dark:text-cyan text-cyan-dark' },
-  { id: 'lesson_card', icon: GraduationCap, color: 'text-purple-400' },
-  { id: 'actions', icon: CheckSquare, color: 'text-green-400' },
-  { id: 'flashcards', icon: Layers, color: 'text-orange-400' },
+  { id: "transcript", icon: FileText, color: "text-gray-400" },
+  { id: "summary_short", icon: Zap, color: "dark:text-lime text-lime-dark" },
+  {
+    id: "summary_detailed",
+    icon: BookOpen,
+    color: "dark:text-cyan text-cyan-dark",
+  },
+  { id: "lesson_card", icon: GraduationCap, color: "text-purple-400" },
+  { id: "actions", icon: CheckSquare, color: "text-green-400" },
+  { id: "flashcards", icon: Layers, color: "text-orange-400" },
 ];
 
 // Check if video is from today
@@ -70,18 +86,28 @@ function isPublishedToday(dateString: string): boolean {
 }
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config: Record<string, { icon: React.ElementType; label: string; class: string }> = {
-    pending: { icon: Clock, label: 'En attente', class: 'badge' },
-    processing: { icon: Loader2, label: 'Analyse...', class: 'badge-warning' },
-    completed: { icon: CheckCircle, label: 'Analysé', class: 'badge-success' },
-    failed: { icon: AlertCircle, label: 'Erreur', class: 'badge-error' },
+  const config: Record<
+    string,
+    { icon: React.ElementType; label: string; class: string }
+  > = {
+    pending: { icon: Clock, label: "En attente", class: "badge" },
+    processing: { icon: Loader2, label: "Analyse...", class: "badge-warning" },
+    completed: { icon: CheckCircle, label: "Analysé", class: "badge-success" },
+    failed: { icon: AlertCircle, label: "Erreur", class: "badge-error" },
   };
 
-  const { icon: Icon, label, class: badgeClass } = config[status] || config.pending;
+  const {
+    icon: Icon,
+    label,
+    class: badgeClass,
+  } = config[status] || config.pending;
 
   return (
     <span className={`badge ${badgeClass} flex items-center gap-1`}>
-      <Icon size={12} className={status === 'processing' ? 'animate-spin' : ''} />
+      <Icon
+        size={12}
+        className={status === "processing" ? "animate-spin" : ""}
+      />
       {label}
     </span>
   );
@@ -106,19 +132,20 @@ function formatRelativeDate(dateString: string): string {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffHours < 1) return "À l'instant";
-  if (diffHours < 24) return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-  if (diffDays === 1) return 'Hier';
-  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+  if (diffHours < 24)
+    return `Il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
+  if (diffDays === 1) return "Hier";
+  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? "s" : ""}`;
   if (diffDays < 30) {
     const weeks = Math.floor(diffDays / 7);
-    return `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`;
+    return `Il y a ${weeks} semaine${weeks > 1 ? "s" : ""}`;
   }
   if (diffDays < 365) {
     const months = Math.floor(diffDays / 30);
     return `Il y a ${months} mois`;
   }
   const years = Math.floor(diffDays / 365);
-  return `Il y a ${years} an${years > 1 ? 's' : ''}`;
+  return `Il y a ${years} an${years > 1 ? "s" : ""}`;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({
@@ -127,7 +154,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   onClick,
   analysisTypes = [],
 }) => {
-  const status = video.is_analyzed ? 'completed' : 'pending';
+  const status = video.is_analyzed ? "completed" : "pending";
   const isTodayVideo = isPublishedToday(video.published_at);
   const [isHovered, setIsHovered] = useState(false);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -161,7 +188,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
       className="relative w-full cursor-pointer group"
       style={{
         transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
-        transition: isHovered ? 'none' : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+        transition: isHovered
+          ? "none"
+          : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
       }}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
@@ -174,15 +203,17 @@ const VideoCard: React.FC<VideoCardProps> = ({
       <div
         className={`absolute -inset-0.5 rounded-xl opacity-0 blur-sm transition-opacity duration-500 ${
           isTodayVideo
-            ? 'bg-gradient-to-r from-lime via-cyan to-lime opacity-75 group-hover:opacity-100 animate-pulse'
-            : 'bg-gradient-to-r from-lime/50 via-cyan/50 to-lime/50 group-hover:opacity-100'
+            ? "bg-gradient-to-r from-lime via-cyan to-lime opacity-75 group-hover:opacity-100 animate-pulse"
+            : "bg-gradient-to-r from-lime/50 via-cyan/50 to-lime/50 group-hover:opacity-100"
         }`}
       ></div>
 
       {/* Main card */}
       <div
         className={`relative dark:bg-dark-800/90 bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden border shadow-2xl ${
-          isTodayVideo ? 'border-lime/30' : 'dark:border-dark-border/50 border-light-border/50'
+          isTodayVideo
+            ? "border-lime/30"
+            : "dark:border-dark-border/50 border-light-border/50"
         }`}
       >
         {/* Glassmorphism overlay */}
@@ -196,14 +227,14 @@ const VideoCard: React.FC<VideoCardProps> = ({
         {/* Thumbnail section */}
         <div className="relative aspect-video overflow-hidden dark:bg-dark-700 bg-light-300">
           <motion.img
-            src={video.thumbnail_url || ''}
+            src={video.thumbnail_url || ""}
             alt={video.title}
             className="w-full h-full object-cover"
             animate={{ scale: isHovered ? 1.1 : 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                'https://via.placeholder.com/320x180/1a1a1a/666?text=Video';
+                "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
             }}
           />
 
@@ -227,7 +258,10 @@ const VideoCard: React.FC<VideoCardProps> = ({
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <PlayCircle size={32} className="text-dark-900 fill-dark-900" />
+                    <PlayCircle
+                      size={32}
+                      className="text-dark-900 fill-dark-900"
+                    />
                   </motion.div>
                 </div>
               </motion.div>
@@ -239,7 +273,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <div className="absolute bottom-2 right-2 bg-dark-900/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-dark-700/50">
               <div className="flex items-center gap-1">
                 <Clock size={12} className="dark:text-lime text-lime-dark" />
-                <span className="text-xs font-medium text-white">{video.duration}</span>
+                <span className="text-xs font-medium text-white">
+                  {video.duration}
+                </span>
               </div>
             </div>
           )}
@@ -249,13 +285,15 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <motion.div
               initial={{ x: -100, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               className="absolute top-2 left-2"
             >
               <div className="relative">
                 <div className="absolute inset-0 bg-cyan/30 rounded-full blur-md animate-pulse"></div>
                 <div className="relative bg-gradient-to-r from-cyan to-lime px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
-                  <span className="text-xs font-bold text-dark-900">🆕 Aujourd'hui</span>
+                  <span className="text-xs font-bold text-dark-900">
+                    🆕 Aujourd'hui
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -277,7 +315,11 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <StatusBadge status={status} />
           </div>
 
-          {channelName && <p className="dark:text-gray-500 text-gray-400 text-xs">{channelName}</p>}
+          {channelName && (
+            <p className="dark:text-gray-500 text-gray-400 text-xs">
+              {channelName}
+            </p>
+          )}
 
           {/* Animated Analysis Badges */}
           <motion.div
@@ -298,9 +340,11 @@ const VideoCard: React.FC<VideoCardProps> = ({
                   className={`p-1 rounded transition-all duration-300 ${
                     hasAnalysis
                       ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30 hover:scale-110`
-                      : 'dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50 dark:hover:bg-dark-700 hover:bg-light-300'
+                      : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50 dark:hover:bg-dark-700 hover:bg-light-300"
                   }`}
-                  title={hasAnalysis ? `${type.id} généré` : `${type.id} non généré`}
+                  title={
+                    hasAnalysis ? `${type.id} généré` : `${type.id} non généré`
+                  }
                   whileHover={{ scale: 1.2 }}
                 >
                   <Icon size={14} />
@@ -319,11 +363,15 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 dark:group-hover:text-cyan group-hover:text-cyan-dark transition-colors duration-300">
                 <Eye size={12} />
-                <span className="font-medium">{formatViews(video.view_count)}</span>
+                <span className="font-medium">
+                  {formatViews(video.view_count)}
+                </span>
               </div>
               {video.like_count > 0 && (
                 <div className="flex items-center gap-1 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors duration-300">
-                  <span className="font-medium">👍 {formatViews(video.like_count)}</span>
+                  <span className="font-medium">
+                    👍 {formatViews(video.like_count)}
+                  </span>
                 </div>
               )}
             </div>
@@ -362,8 +410,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
                   repeat: Infinity,
                 }}
                 style={{
-                  left: '50%',
-                  top: '50%',
+                  left: "50%",
+                  top: "50%",
                 }}
               />
             ))}
@@ -374,12 +422,15 @@ const VideoCard: React.FC<VideoCardProps> = ({
   );
 };
 
-export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSearchChange }) => {
+export const VideosPage: React.FC<VideosPageProps> = ({
+  searchQuery = "",
+  onSearchChange,
+}) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlChannelId = searchParams.get('channelId');
+  const urlChannelId = searchParams.get("channelId");
 
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [videos, setVideos] = useState<Video[]>([]);
   const [channel, setChannel] = useState<Channel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -390,14 +441,16 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
-  const [videoAnalyses, setVideoAnalyses] = useState<Record<string, string[]>>({});
+  const [videoAnalyses, setVideoAnalyses] = useState<Record<string, string[]>>(
+    {},
+  );
 
   // Advanced filters state
   const [filters, setFilters] = useState<FilterState>({
     search: searchQuery,
     channelId: urlChannelId,
-    dateRange: 'all',
-    sortBy: 'date_desc',
+    dateRange: "all",
+    sortBy: "date_desc",
   });
 
   // Sync URL channel filter with state
@@ -405,6 +458,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
     if (urlChannelId !== filters.channelId) {
       setFilters((prev) => ({ ...prev, channelId: urlChannelId }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlChannelId]);
 
   // Update URL when channel filter changes
@@ -436,13 +490,16 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
   }, [filters.search]);
 
   // Handle filter changes
-  const handleFiltersChange = useCallback((newFilters: FilterState) => {
-    setFilters(newFilters);
-    // Update parent search if provided
-    if (onSearchChange && newFilters.search !== filters.search) {
-      onSearchChange(newFilters.search);
-    }
-  }, [onSearchChange, filters.search]);
+  const handleFiltersChange = useCallback(
+    (newFilters: FilterState) => {
+      setFilters(newFilters);
+      // Update parent search if provided
+      if (onSearchChange && newFilters.search !== filters.search) {
+        onSearchChange(newFilters.search);
+      }
+    },
+    [onSearchChange, filters.search],
+  );
 
   // Initial fetch with auto-refresh
   useEffect(() => {
@@ -459,7 +516,10 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
             try {
               await channelsApi.refreshVideos(channelId);
             } catch (refreshErr) {
-              console.warn('Auto-refresh failed, continuing with existing data:', refreshErr);
+              console.warn(
+                "Auto-refresh failed, continuing with existing data:",
+                refreshErr,
+              );
             }
           }
 
@@ -474,7 +534,10 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
             setTotalVideos(response.total);
             setHasMore(response.hasMore);
             // Also fetch channel info for display
-            const channelData = await channelsApi.get(channelId, abortController.signal);
+            const channelData = await channelsApi.get(
+              channelId,
+              abortController.signal,
+            );
             setChannel(channelData);
           }
         } else {
@@ -493,8 +556,8 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
         }
       } catch (err) {
         if (!abortController.signal.aborted) {
-          console.error('Error fetching videos:', err);
-          setError('Impossible de charger les vidéos');
+          console.error("Error fetching videos:", err);
+          setError("Impossible de charger les vidéos");
           setVideos([]);
         }
       } finally {
@@ -520,7 +583,10 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
 
       try {
         // Fetch all analyses
-        const response = await analysesApi.list({ limit: 1000, signal: abortController.signal });
+        const response = await analysesApi.list({
+          limit: 1000,
+          signal: abortController.signal,
+        });
 
         if (!abortController.signal.aborted) {
           // Group analyses by video_id
@@ -536,7 +602,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
         }
       } catch (err) {
         if (!abortController.signal.aborted) {
-          console.error('Error fetching analyses:', err);
+          console.error("Error fetching analyses:", err);
         }
       }
     };
@@ -567,7 +633,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
         setTotalVideos(response.total);
         setHasMore(response.hasMore);
       } catch (err) {
-        console.error('Background auto-refresh failed:', err);
+        console.error("Background auto-refresh failed:", err);
       }
     }, POLLING_INTERVAL);
 
@@ -599,7 +665,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       setVideos((prev) => [...prev, ...response.videos]);
       setHasMore(response.hasMore);
     } catch (err) {
-      console.error('Error loading more videos:', err);
+      console.error("Error loading more videos:", err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -629,8 +695,8 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       // Clear message after 3 seconds
       setTimeout(() => setRefreshMessage(null), 3000);
     } catch (err) {
-      console.error('Error refreshing videos:', err);
-      setRefreshMessage('❌ Erreur lors du rafraîchissement');
+      console.error("Error refreshing videos:", err);
+      setRefreshMessage("❌ Erreur lors du rafraîchissement");
       setTimeout(() => setRefreshMessage(null), 3000);
     } finally {
       setIsRefreshing(false);
@@ -642,15 +708,15 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
     let result = [...videos];
 
     // Status filter
-    if (statusFilter !== 'all') {
+    if (statusFilter !== "all") {
       result = result.filter((v) => {
-        const status = v.is_analyzed ? 'completed' : 'pending';
+        const status = v.is_analyzed ? "completed" : "pending";
         return status === statusFilter;
       });
     }
 
     // Date range filter
-    result = filterByDateRange(result, filters.dateRange, 'published_at');
+    result = filterByDateRange(result, filters.dateRange, "published_at");
 
     // Sorting
     result = sortItems(result, filters.sortBy, {
@@ -665,7 +731,10 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={32} className="animate-spin dark:text-lime text-lime-dark" />
+        <Loader2
+          size={32}
+          className="animate-spin dark:text-lime text-lime-dark"
+        />
       </div>
     );
   }
@@ -675,11 +744,13 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Vidéos</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+            Vidéos
+          </h1>
           <p className="dark:text-gray-400 text-gray-500 mt-1">
-            {videos.length} vidéo{videos.length !== 1 ? 's' : ''} •{' '}
+            {videos.length} vidéo{videos.length !== 1 ? "s" : ""} •{" "}
             {videos.filter((v) => v.is_analyzed).length} analysée
-            {videos.filter((v) => v.is_analyzed).length !== 1 ? 's' : ''}
+            {videos.filter((v) => v.is_analyzed).length !== 1 ? "s" : ""}
           </p>
         </div>
       </div>
@@ -688,15 +759,17 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       {channel && (
         <div className="flex items-center gap-2 p-3 bg-lime-muted border border-lime/20 rounded-xl">
           <img
-            src={channel.thumbnail_url || ''}
+            src={channel.thumbnail_url || ""}
             alt={channel.name}
             className="w-8 h-8 rounded-full"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                'https://via.placeholder.com/32/1a1a1a/666?text=YT';
+                "https://via.placeholder.com/32/1a1a1a/666?text=YT";
             }}
           />
-          <span className="dark:text-lime text-lime-dark font-medium">Filtre : {channel.name}</span>
+          <span className="dark:text-lime text-lime-dark font-medium">
+            Filtre : {channel.name}
+          </span>
 
           {/* Refresh Message */}
           {refreshMessage && (
@@ -713,9 +786,12 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
               className="flex items-center gap-2 px-3 py-1.5 bg-lime/20 hover:bg-lime/30 dark:text-lime text-lime-dark rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Récupérer les dernières vidéos"
             >
-              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              <RefreshCw
+                size={16}
+                className={isRefreshing ? "animate-spin" : ""}
+              />
               <span className="text-sm font-medium">
-                {isRefreshing ? 'Rafraîchissement...' : 'Rafraîchir'}
+                {isRefreshing ? "Rafraîchissement..." : "Rafraîchir"}
               </span>
             </button>
 
@@ -751,7 +827,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       <div className="flex items-center justify-between gap-4 flex-wrap">
         {/* Status Filter */}
         <div className="flex items-center gap-2">
-          {(['all', 'completed', 'pending'] as StatusFilter[]).map((status) => (
+          {(["all", "completed", "pending"] as StatusFilter[]).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
@@ -759,12 +835,16 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
                 px-3 py-1.5 text-sm font-medium rounded-lg transition-all
                 ${
                   statusFilter === status
-                    ? 'bg-lime text-black'
-                    : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+                    ? "bg-lime text-black"
+                    : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
                 }
               `}
             >
-              {status === 'all' ? 'Tous' : status === 'completed' ? 'Analysés' : 'En attente'}
+              {status === "all"
+                ? "Tous"
+                : status === "completed"
+                  ? "Analysés"
+                  : "En attente"}
             </button>
           ))}
         </div>
@@ -772,14 +852,14 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
         {/* View Mode */}
         <div className="flex items-center dark:bg-dark-700 bg-light-300 rounded-lg p-1">
           <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-500'}`}
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-md transition-all ${viewMode === "grid" ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900" : "dark:text-gray-400 text-gray-500"}`}
           >
             <Grid size={18} />
           </button>
           <button
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-500'}`}
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-md transition-all ${viewMode === "list" ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900" : "dark:text-gray-400 text-gray-500"}`}
           >
             <List size={18} />
           </button>
@@ -792,11 +872,13 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
           <div className="inline-flex p-4 bg-lime-muted rounded-2xl mb-4">
             <Youtube size={32} className="dark:text-lime text-lime-dark" />
           </div>
-          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucune vidéo</h2>
+          <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+            Aucune vidéo
+          </h2>
           <p className="dark:text-gray-400 text-gray-500">
             {channelId
               ? "Cette chaîne n'a pas encore de vidéos importées."
-              : 'Ajoutez une chaîne pour voir ses vidéos ici.'}
+              : "Ajoutez une chaîne pour voir ses vidéos ici."}
           </p>
         </div>
       )}
@@ -806,7 +888,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
         <div
           className={`
           grid gap-4
-          ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}
+          ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}
         `}
         >
           {filteredVideos.map((video) => (
@@ -823,7 +905,9 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
 
       {filteredVideos.length === 0 && videos.length > 0 && (
         <div className="text-center py-12">
-          <p className="dark:text-gray-500 text-gray-400">Aucune vidéo trouvée avec ces filtres</p>
+          <p className="dark:text-gray-500 text-gray-400">
+            Aucune vidéo trouvée avec ces filtres
+          </p>
         </div>
       )}
 
@@ -856,7 +940,9 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
       {/* All videos loaded message */}
       {!hasMore && videos.length > 0 && totalVideos > VIDEOS_PER_PAGE && (
         <div className="text-center py-6">
-          <p className="text-sm dark:text-gray-500 text-gray-400">Toutes les {totalVideos} vidéos sont affichées</p>
+          <p className="text-sm dark:text-gray-500 text-gray-400">
+            Toutes les {totalVideos} vidéos sont affichées
+          </p>
         </div>
       )}
 
@@ -884,7 +970,7 @@ export const VideosPage: React.FC<VideosPageProps> = ({ searchQuery = '', onSear
                     });
                 setVideos(response.videos);
               } catch (err) {
-                console.error('Error refreshing videos:', err);
+                console.error("Error refreshing videos:", err);
               }
             };
             fetchData();

@@ -3,28 +3,28 @@
  * Structured request/response logging with timing
  */
 
-import { createMiddleware } from 'hono/factory';
-import { logger, createRequestLogger } from '../lib/logger';
+import { createMiddleware } from "hono/factory";
+import { logger, createRequestLogger } from "../lib/logger";
 
 /**
  * Pino logger middleware - logs all requests with structured data
  */
 export const pinoLogger = createMiddleware(async (c, next) => {
   const start = Date.now();
-  const requestId = c.get('requestId') || 'unknown';
+  const requestId = c.get("requestId") || "unknown";
   const method = c.req.method;
   const path = c.req.path;
-  const userAgent = c.req.header('user-agent') || 'unknown';
+  const userAgent = c.req.header("user-agent") || "unknown";
 
   // Create request-scoped logger
   const reqLogger = createRequestLogger(requestId, method, path);
 
   // Store logger in context for use in routes
-  c.set('logger', reqLogger);
+  c.set("logger", reqLogger);
 
   // Log incoming request
   reqLogger.info({
-    type: 'request',
+    type: "request",
     userAgent,
     query: c.req.query(),
   });
@@ -34,8 +34,8 @@ export const pinoLogger = createMiddleware(async (c, next) => {
   } catch (error) {
     // Log error with full context
     reqLogger.error({
-      type: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      type: "error",
+      error: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });
     throw error;
@@ -46,13 +46,13 @@ export const pinoLogger = createMiddleware(async (c, next) => {
   const status = c.res.status;
 
   // Log response
-  const logLevel = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info';
+  const logLevel = status >= 500 ? "error" : status >= 400 ? "warn" : "info";
 
   reqLogger[logLevel]({
-    type: 'response',
+    type: "response",
     status,
     responseTime,
-    contentLength: c.res.headers.get('content-length'),
+    contentLength: c.res.headers.get("content-length"),
   });
 });
 
@@ -62,9 +62,9 @@ export const pinoLogger = createMiddleware(async (c, next) => {
 export const logInfo = (
   c: { get: (key: string) => unknown },
   message: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
 ) => {
-  const reqLogger = c.get('logger') as typeof logger | undefined;
+  const reqLogger = c.get("logger") as typeof logger | undefined;
   if (reqLogger) {
     reqLogger.info(data, message);
   } else {
@@ -75,9 +75,9 @@ export const logInfo = (
 export const logWarn = (
   c: { get: (key: string) => unknown },
   message: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
 ) => {
-  const reqLogger = c.get('logger') as typeof logger | undefined;
+  const reqLogger = c.get("logger") as typeof logger | undefined;
   if (reqLogger) {
     reqLogger.warn(data, message);
   } else {
@@ -88,9 +88,9 @@ export const logWarn = (
 export const logError = (
   c: { get: (key: string) => unknown },
   message: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
 ) => {
-  const reqLogger = c.get('logger') as typeof logger | undefined;
+  const reqLogger = c.get("logger") as typeof logger | undefined;
   if (reqLogger) {
     reqLogger.error(data, message);
   } else {

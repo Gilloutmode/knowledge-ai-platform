@@ -3,9 +3,9 @@
  * Provides response caching for API endpoints
  */
 
-import { createMiddleware } from 'hono/factory';
-import { cache, cacheTTL } from '../lib/cache';
-import { logger } from '../lib/logger';
+import { createMiddleware } from "hono/factory";
+import { cache, cacheTTL } from "../lib/cache";
+import { logger } from "../lib/logger";
 
 /**
  * Creates a cache middleware with configurable TTL
@@ -14,7 +14,7 @@ import { logger } from '../lib/logger';
 export function createCacheMiddleware(ttlSeconds: number = cacheTTL.medium) {
   return createMiddleware(async (c, next) => {
     // Only cache GET requests
-    if (c.req.method !== 'GET') {
+    if (c.req.method !== "GET") {
       await next();
       return;
     }
@@ -25,9 +25,9 @@ export function createCacheMiddleware(ttlSeconds: number = cacheTTL.medium) {
     // Check cache
     const cached = cache.get<{ body: string; contentType: string }>(cacheKey);
     if (cached) {
-      logger.debug({ cacheKey }, 'Cache hit');
-      c.res.headers.set('X-Cache', 'HIT');
-      c.res.headers.set('Content-Type', cached.contentType);
+      logger.debug({ cacheKey }, "Cache hit");
+      c.res.headers.set("X-Cache", "HIT");
+      c.res.headers.set("Content-Type", cached.contentType);
       return c.body(cached.body);
     }
 
@@ -36,7 +36,8 @@ export function createCacheMiddleware(ttlSeconds: number = cacheTTL.medium) {
 
     // Only cache successful responses
     if (c.res.status === 200) {
-      const contentType = c.res.headers.get('Content-Type') || 'application/json';
+      const contentType =
+        c.res.headers.get("Content-Type") || "application/json";
 
       // Clone response body
       const clonedResponse = c.res.clone();
@@ -44,8 +45,8 @@ export function createCacheMiddleware(ttlSeconds: number = cacheTTL.medium) {
 
       // Store in cache
       cache.set(cacheKey, { body, contentType }, ttlSeconds);
-      logger.debug({ cacheKey, ttl: ttlSeconds }, 'Cache miss - stored');
-      c.res.headers.set('X-Cache', 'MISS');
+      logger.debug({ cacheKey, ttl: ttlSeconds }, "Cache miss - stored");
+      c.res.headers.set("X-Cache", "MISS");
     }
   });
 }
@@ -62,7 +63,7 @@ export function invalidateCache(pattern: string) {
     if (c.res.status >= 200 && c.res.status < 300) {
       const deleted = cache.deletePattern(pattern);
       if (deleted > 0) {
-        logger.debug({ pattern, deleted }, 'Cache invalidated');
+        logger.debug({ pattern, deleted }, "Cache invalidated");
       }
     }
   });
@@ -84,14 +85,17 @@ export const apiCache = {
   // No cache (for mutations or real-time data)
   none: createMiddleware(async (c, next) => {
     await next();
-    c.res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    c.res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
   }),
 };
 
 /**
  * Cache control headers for client-side caching
  */
-export function setCacheHeaders(maxAge: number = 0, staleWhileRevalidate: number = 0) {
+export function setCacheHeaders(
+  maxAge: number = 0,
+  staleWhileRevalidate: number = 0,
+) {
   return createMiddleware(async (c, next) => {
     await next();
 
@@ -101,9 +105,12 @@ export function setCacheHeaders(maxAge: number = 0, staleWhileRevalidate: number
           staleWhileRevalidate > 0
             ? `public, max-age=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`
             : `public, max-age=${maxAge}`;
-        c.res.headers.set('Cache-Control', directive);
+        c.res.headers.set("Cache-Control", directive);
       } else {
-        c.res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+        c.res.headers.set(
+          "Cache-Control",
+          "no-store, no-cache, must-revalidate",
+        );
       }
     }
   });

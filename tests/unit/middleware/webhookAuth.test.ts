@@ -32,7 +32,8 @@ describe('Webhook Auth Middleware', () => {
   });
 
   describe('when N8N_WEBHOOK_SECRET is configured', () => {
-    const WEBHOOK_SECRET = 'super-secret-webhook-key-12345';
+    // Secret must be at least 32 chars for the new HMAC implementation
+    const WEBHOOK_SECRET = 'super-secret-webhook-key-1234567890';
 
     beforeEach(async () => {
       process.env.N8N_WEBHOOK_SECRET = WEBHOOK_SECRET;
@@ -48,7 +49,7 @@ describe('Webhook Auth Middleware', () => {
       const res = await app.request('/webhook', { method: 'POST' });
       expect(res.status).toBe(401);
       const data = await res.json();
-      expect(data.error).toContain('Missing webhook secret');
+      expect(data.error).toContain('Missing webhook authentication');
     });
 
     it('should reject requests with invalid secret in header', async () => {
@@ -102,7 +103,8 @@ describe('Webhook Auth Middleware', () => {
       expect(data.received).toBe(true);
     });
 
-    it('should accept valid secret in query parameter', async () => {
+    it('should reject query parameter authentication (not supported in HMAC mode)', async () => {
+      // Query parameter auth was removed for security - use header-based auth instead
       const { webhookAuth } = await import('@server/middleware/webhookAuth');
 
       app = new Hono();
@@ -113,25 +115,8 @@ describe('Webhook Auth Middleware', () => {
         method: 'POST',
       });
 
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.received).toBe(true);
-    });
-
-    it('should reject invalid secret in query parameter', async () => {
-      const { webhookAuth } = await import('@server/middleware/webhookAuth');
-
-      app = new Hono();
-      app.use('*', webhookAuth);
-      app.post('/webhook', (c) => c.json({ received: true }));
-
-      const res = await app.request('/webhook?secret=invalid', {
-        method: 'POST',
-      });
-
+      // Query params are not accepted - must use headers
       expect(res.status).toBe(401);
-      const data = await res.json();
-      expect(data.error).toContain('Invalid webhook secret');
     });
 
     it('should prefer header secret over query parameter', async () => {
@@ -199,8 +184,95 @@ describe('Webhook Auth Middleware', () => {
     });
   });
 
+  describe('HMAC authentication', () => {
+    // Secret must be at least 32 chars
+    const WEBHOOK_SECRET = 'hmac-secret-key-1234567890abcdefgh';
+
+    beforeEach(() => {
+      vi.resetModules();
+      process.env.N8N_WEBHOOK_SECRET = WEBHOOK_SECRET;
+    });
+
+    it('should accept valid HMAC signature', async () => {
+      const { webhookAuth, generateWebhookSignature } = await import('@server/middleware/webhookAuth');
+
+      app = new Hono();
+      app.use('*', webhookAuth);
+      app.post('/webhook', (c) => c.json({ received: true }));
+
+      const payload = JSON.stringify({ test: 'data' });
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = generateWebhookSignature(payload, timestamp, WEBHOOK_SECRET);
+
+      const res = await app.request('/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Signature': `sha256=${signature}`,
+          'X-Webhook-Timestamp': timestamp.toString(),
+        },
+        body: payload,
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should reject invalid HMAC signature', async () => {
+      const { webhookAuth } = await import('@server/middleware/webhookAuth');
+
+      app = new Hono();
+      app.use('*', webhookAuth);
+      app.post('/webhook', (c) => c.json({ received: true }));
+
+      const payload = JSON.stringify({ test: 'data' });
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      const res = await app.request('/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Signature': 'sha256=invalidsignature',
+          'X-Webhook-Timestamp': timestamp.toString(),
+        },
+        body: payload,
+      });
+
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error).toContain('Invalid signature');
+    });
+
+    it('should reject expired timestamps', async () => {
+      const { webhookAuth, generateWebhookSignature } = await import('@server/middleware/webhookAuth');
+
+      app = new Hono();
+      app.use('*', webhookAuth);
+      app.post('/webhook', (c) => c.json({ received: true }));
+
+      const payload = JSON.stringify({ test: 'data' });
+      // Timestamp from 10 minutes ago (beyond 5 min max age)
+      const timestamp = Math.floor(Date.now() / 1000) - 600;
+      const signature = generateWebhookSignature(payload, timestamp, WEBHOOK_SECRET);
+
+      const res = await app.request('/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Signature': `sha256=${signature}`,
+          'X-Webhook-Timestamp': timestamp.toString(),
+        },
+        body: payload,
+      });
+
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error).toContain('timestamp too old');
+    });
+  });
+
   describe('Security edge cases', () => {
-    const WEBHOOK_SECRET = 'secure-key-xyz';
+    // Secret must be at least 32 chars for the HMAC implementation
+    const WEBHOOK_SECRET = 'secure-key-xyz-1234567890abcdefgh';
 
     beforeEach(() => {
       process.env.N8N_WEBHOOK_SECRET = WEBHOOK_SECRET;
@@ -271,7 +343,8 @@ describe('Webhook Auth Middleware', () => {
 
     it('should handle special characters in secrets', async () => {
       vi.resetModules();
-      const specialSecret = 'secret!@#$%^&*()_+-=[]{}|;:,.<>?';
+      // Secret with special chars, at least 32 chars
+      const specialSecret = 'secret!@#$%^&*()_+-=[]{}|;:,.<>?abc';
       process.env.N8N_WEBHOOK_SECRET = specialSecret;
 
       const { webhookAuth } = await import('@server/middleware/webhookAuth');

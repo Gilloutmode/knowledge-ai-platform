@@ -1,5 +1,6 @@
-import { Context, Next } from 'hono';
-import { createClient } from '@supabase/supabase-js';
+import { Context, Next } from "hono";
+import { createClient } from "@supabase/supabase-js";
+import { logger } from "../lib/logger";
 
 /**
  * JWT Authentication Middleware
@@ -13,8 +14,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Check if demo mode is allowed
 function isDemoModeAllowed(): boolean {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const allowDemo = process.env.ALLOW_DEMO_MODE === 'true';
+  const isProduction = process.env.NODE_ENV === "production";
+  const allowDemo = process.env.ALLOW_DEMO_MODE === "true";
 
   // Never allow demo mode in production
   if (isProduction) {
@@ -38,10 +39,10 @@ function getAuthClient() {
 }
 
 // Demo user ID for development/testing only
-const DEMO_USER_ID = '00000000-0000-0000-0000-000000000000';
+const DEMO_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 // Extend Hono context to include user
-declare module 'hono' {
+declare module "hono" {
   interface ContextVariableMap {
     userId: string;
     user: {
@@ -59,34 +60,37 @@ export async function authMiddleware(c: Context, next: Next) {
   // Handle missing Supabase configuration
   if (!supabase) {
     if (isDemoModeAllowed()) {
-      console.warn('⚠️ Running in DEMO MODE - auth disabled (development only)');
-      c.set('userId', DEMO_USER_ID);
-      c.set('user', { id: DEMO_USER_ID });
-      c.set('isDemo', true);
+      logger.warn("Running in DEMO MODE - auth disabled (development only)");
+      c.set("userId", DEMO_USER_ID);
+      c.set("user", { id: DEMO_USER_ID });
+      c.set("isDemo", true);
       return next();
     }
 
     // In production or when demo mode not allowed, fail the request
-    console.error('🔴 Supabase not configured and demo mode not allowed');
+    logger.error("Supabase not configured and demo mode not allowed");
     return c.json(
       {
-        error: 'Server configuration error',
-        message: 'Authentication service unavailable',
+        error: "Server configuration error",
+        message: "Authentication service unavailable",
       },
-      503
+      503,
     );
   }
 
-  c.set('isDemo', false);
+  c.set("isDemo", false);
 
   // Extract token from Authorization header
-  const authHeader = c.req.header('Authorization');
+  const authHeader = c.req.header("Authorization");
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized: Missing or invalid authorization header' }, 401);
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return c.json(
+      { error: "Unauthorized: Missing or invalid authorization header" },
+      401,
+    );
   }
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace("Bearer ", "");
 
   try {
     // Verify the JWT token with Supabase
@@ -96,13 +100,13 @@ export async function authMiddleware(c: Context, next: Next) {
     } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      console.error('Auth error:', error?.message);
-      return c.json({ error: 'Unauthorized: Invalid token' }, 401);
+      logger.error({ error: error?.message }, "Auth error: Invalid token");
+      return c.json({ error: "Unauthorized: Invalid token" }, 401);
     }
 
     // Set user info in context for downstream handlers
-    c.set('userId', user.id);
-    c.set('user', {
+    c.set("userId", user.id);
+    c.set("user", {
       id: user.id,
       email: user.email,
       role: user.role,
@@ -110,8 +114,8 @@ export async function authMiddleware(c: Context, next: Next) {
 
     return next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    return c.json({ error: 'Unauthorized: Token verification failed' }, 401);
+    logger.error({ error }, "Auth middleware error");
+    return c.json({ error: "Unauthorized: Token verification failed" }, 401);
   }
 }
 
@@ -125,27 +129,27 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
   // Handle missing Supabase configuration
   if (!supabase) {
     if (isDemoModeAllowed()) {
-      c.set('userId', DEMO_USER_ID);
-      c.set('user', { id: DEMO_USER_ID });
-      c.set('isDemo', true);
+      c.set("userId", DEMO_USER_ID);
+      c.set("user", { id: DEMO_USER_ID });
+      c.set("isDemo", true);
       return next();
     }
 
     // In production, continue without user context (routes must handle this)
-    c.set('isDemo', false);
+    c.set("isDemo", false);
     return next();
   }
 
-  c.set('isDemo', false);
+  c.set("isDemo", false);
 
-  const authHeader = c.req.header('Authorization');
+  const authHeader = c.req.header("Authorization");
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     // No auth header, continue without user context
     return next();
   }
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace("Bearer ", "");
 
   try {
     const {
@@ -154,8 +158,8 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
     } = await supabase.auth.getUser(token);
 
     if (!error && user) {
-      c.set('userId', user.id);
-      c.set('user', {
+      c.set("userId", user.id);
+      c.set("user", {
         id: user.id,
         email: user.email,
         role: user.role,
@@ -163,7 +167,7 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
     }
   } catch (error) {
     // Ignore auth errors in optional mode
-    console.warn('Optional auth failed:', error);
+    logger.warn({ error }, "Optional auth failed");
   }
 
   return next();
@@ -173,7 +177,7 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
  * Check if current request is in demo mode
  */
 export function isRequestInDemoMode(c: Context): boolean {
-  return c.get('isDemo') === true;
+  return c.get("isDemo") === true;
 }
 
 // Export for testing

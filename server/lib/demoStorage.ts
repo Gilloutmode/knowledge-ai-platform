@@ -37,4 +37,5 @@ export const demoChannels = new Map<string, DemoChannel>();
 export const demoVideos = new Map<string, DemoVideo>();
 
 // Helper to check if we're in demo mode
-export const isDemoMode = !process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY;
+export const isDemoMode =
+  !process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY;

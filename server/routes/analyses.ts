@@ -1,15 +1,15 @@
-import { Hono } from 'hono';
-import { logger } from '../lib/logger';
-import { getSupabase } from '../lib/supabase';
+import { Hono } from "hono";
+import { logger } from "../lib/logger";
+import { getSupabase } from "../lib/supabase";
 
 const analysesRouter = new Hono();
 
 // GET /api/analyses - List all analyses with optional filters
-analysesRouter.get('/', async (c) => {
-  const videoId = c.req.query('videoId') || c.req.query('video_id');
-  const type = c.req.query('type');
-  const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100); // Max 100
-  const offset = Math.max(parseInt(c.req.query('offset') || '0'), 0); // Min 0
+analysesRouter.get("/", async (c) => {
+  const videoId = c.req.query("videoId") || c.req.query("video_id");
+  const type = c.req.query("type");
+  const limit = Math.min(parseInt(c.req.query("limit") || "50"), 100); // Max 100
+  const offset = Math.max(parseInt(c.req.query("offset") || "0"), 0); // Min 0
 
   try {
     const supabase = getSupabase();
@@ -19,13 +19,15 @@ analysesRouter.get('/', async (c) => {
     }
 
     // Get total count first
-    let countQuery = supabase.from('analyses').select('*', { count: 'exact', head: true });
+    let countQuery = supabase
+      .from("analyses")
+      .select("*", { count: "exact", head: true });
 
     if (videoId) {
-      countQuery = countQuery.eq('video_id', videoId);
+      countQuery = countQuery.eq("video_id", videoId);
     }
-    if (type && type !== 'all') {
-      countQuery = countQuery.eq('type', type);
+    if (type && type !== "all") {
+      countQuery = countQuery.eq("type", type);
     }
 
     const { count: totalCount, error: countError } = await countQuery;
@@ -33,7 +35,7 @@ analysesRouter.get('/', async (c) => {
 
     // Fetch analyses with video info
     let query = supabase
-      .from('analyses')
+      .from("analyses")
       .select(
         `
         *,
@@ -48,16 +50,16 @@ analysesRouter.get('/', async (c) => {
             thumbnail_url
           )
         )
-      `
+      `,
       )
-      .order('created_at', { ascending: false })
+      .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (videoId) {
-      query = query.eq('video_id', videoId);
+      query = query.eq("video_id", videoId);
     }
-    if (type && type !== 'all') {
-      query = query.eq('type', type);
+    if (type && type !== "all") {
+      query = query.eq("type", type);
     }
 
     const { data, error } = await query;
@@ -69,23 +71,23 @@ analysesRouter.get('/', async (c) => {
       hasMore: offset + limit < (totalCount || 0),
     });
   } catch (err) {
-    logger.error({ err }, 'Error fetching analyses');
-    return c.json({ error: 'Failed to fetch analyses' }, 500);
+    logger.error({ err }, "Error fetching analyses");
+    return c.json({ error: "Failed to fetch analyses" }, 500);
   }
 });
 
 // GET /api/analyses/:id - Get single analysis
-analysesRouter.get('/:id', async (c) => {
-  const id = c.req.param('id');
+analysesRouter.get("/:id", async (c) => {
+  const id = c.req.param("id");
 
   try {
     const supabase = getSupabase();
     if (!supabase) {
-      return c.json({ error: 'Analysis not found' }, 404);
+      return c.json({ error: "Analysis not found" }, 404);
     }
 
     const { data, error } = await supabase
-      .from('analyses')
+      .from("analyses")
       .select(
         `
         *,
@@ -99,18 +101,18 @@ analysesRouter.get('/:id', async (c) => {
             name
           )
         )
-      `
+      `,
       )
-      .eq('id', id)
+      .eq("id", id)
       .single();
 
     if (error) throw error;
-    if (!data) return c.json({ error: 'Analysis not found' }, 404);
+    if (!data) return c.json({ error: "Analysis not found" }, 404);
 
     return c.json({ analysis: data });
   } catch (err) {
-    logger.error({ err }, 'Error fetching analysis');
-    return c.json({ error: 'Failed to fetch analysis' }, 500);
+    logger.error({ err }, "Error fetching analysis");
+    return c.json({ error: "Failed to fetch analysis" }, 500);
   }
 });
 

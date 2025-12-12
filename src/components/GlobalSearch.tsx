@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Youtube, PlayCircle, Users, Loader2, X } from 'lucide-react';
-import { searchApi, SearchResults } from '../services/api';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Youtube, PlayCircle, Users, Loader2, X } from "lucide-react";
+import { searchApi, SearchResults } from "../services/api";
 
 // Format subscriber count
 function formatSubscribers(count: number): string {
@@ -13,9 +13,12 @@ function formatSubscribers(count: number): string {
 
 export const GlobalSearch: React.FC = () => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [results, setResults] = useState<SearchResults>({ channels: [], videos: [] });
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [results, setResults] = useState<SearchResults>({
+    channels: [],
+    videos: [],
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +47,7 @@ export const GlobalSearch: React.FC = () => {
         setResults(data);
         setIsOpen(true);
       } catch (error) {
-        console.error('Search error:', error);
+        console.error("Search error:", error);
         setResults({ channels: [], videos: [] });
       } finally {
         setIsLoading(false);
@@ -57,18 +60,21 @@ export const GlobalSearch: React.FC = () => {
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       setIsOpen(false);
       inputRef.current?.blur();
     }
@@ -77,14 +83,14 @@ export const GlobalSearch: React.FC = () => {
   // Navigate to channel
   const handleChannelClick = (channelId: string) => {
     navigate(`/contents?source=youtube&view=videos&channel=${channelId}`);
-    setQuery('');
+    setQuery("");
     setIsOpen(false);
   };
 
   // Navigate to video
   const handleVideoClick = (videoId: string) => {
     navigate(`/contents?source=youtube&view=videos&videoId=${videoId}`);
-    setQuery('');
+    setQuery("");
     setIsOpen(false);
   };
 
@@ -124,7 +130,7 @@ export const GlobalSearch: React.FC = () => {
           ) : query ? (
             <button
               onClick={() => {
-                setQuery('');
+                setQuery("");
                 setIsOpen(false);
               }}
               aria-label="Effacer la recherche"
@@ -138,7 +144,7 @@ export const GlobalSearch: React.FC = () => {
 
       {/* Results Dropdown */}
       <AnimatePresence>
-        {isOpen && (query.length >= 2) && (
+        {isOpen && query.length >= 2 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,7 +193,9 @@ export const GlobalSearch: React.FC = () => {
                         {channel.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                        <span>{formatSubscribers(channel.subscriber_count)} abonnés</span>
+                        <span>
+                          {formatSubscribers(channel.subscriber_count)} abonnés
+                        </span>
                         <span>•</span>
                         <span>{channel.video_count} vidéos</span>
                       </p>
@@ -247,7 +255,11 @@ export const GlobalSearch: React.FC = () => {
             {hasResults && (
               <div className="px-4 py-2 bg-light-100 dark:bg-dark-700 border-t border-light-border dark:border-dark-border">
                 <p className="text-xs text-gray-400 text-center">
-                  Appuyez sur <kbd className="px-1.5 py-0.5 bg-light-200 dark:bg-dark-600 rounded text-gray-500">Échap</kbd> pour fermer
+                  Appuyez sur{" "}
+                  <kbd className="px-1.5 py-0.5 bg-light-200 dark:bg-dark-600 rounded text-gray-500">
+                    Échap
+                  </kbd>{" "}
+                  pour fermer
                 </p>
               </div>
             )}

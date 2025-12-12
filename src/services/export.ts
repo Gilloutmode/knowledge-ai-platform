@@ -1,13 +1,13 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-export type ExportFormat = 'markdown' | 'pdf' | 'json';
+export type ExportFormat = "markdown" | "pdf" | "json";
 
 export interface ExportOptions {
   format: ExportFormat;
   includeMetadata?: boolean;
   includeTimestamps?: boolean;
-  template?: 'default' | 'minimal' | 'detailed';
+  template?: "default" | "minimal" | "detailed";
   filename?: string;
 }
 
@@ -24,12 +24,12 @@ export interface AnalysisExportData {
 
 // Type labels for display
 const typeLabels: Record<string, string> = {
-  transcript: 'Transcription',
-  summary_short: 'Résumé court',
-  summary_detailed: 'Résumé détaillé',
-  lesson_card: 'Fiche de cours',
-  actions: 'Actions',
-  flashcards: 'Flashcards',
+  transcript: "Transcription",
+  summary_short: "Résumé court",
+  summary_detailed: "Résumé détaillé",
+  lesson_card: "Fiche de cours",
+  actions: "Actions",
+  flashcards: "Flashcards",
 };
 
 // Convert analysis type to readable label
@@ -39,23 +39,27 @@ function getTypeLabel(type: string): string {
 
 // Format date for display
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(dateString).toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 // Generate Markdown content
 export function generateMarkdown(
   analysis: AnalysisExportData,
-  options: ExportOptions = { format: 'markdown' }
+  options: ExportOptions = { format: "markdown" },
 ): string {
-  const { includeMetadata = true, includeTimestamps = true, template = 'default' } = options;
+  const {
+    includeMetadata = true,
+    includeTimestamps = true,
+    template = "default",
+  } = options;
 
-  let markdown = '';
+  let markdown = "";
 
   // Header
   markdown += `# ${getTypeLabel(analysis.type)}\n\n`;
@@ -74,21 +78,21 @@ export function generateMarkdown(
     if (includeTimestamps) {
       markdown += `- **Généré le**: ${formatDate(analysis.createdAt)}\n`;
     }
-    markdown += '\n---\n\n';
+    markdown += "\n---\n\n";
   }
 
   // Content
-  if (template === 'minimal') {
+  if (template === "minimal") {
     markdown += analysis.content;
-  } else if (template === 'detailed') {
+  } else if (template === "detailed") {
     markdown += `## Contenu\n\n`;
     markdown += analysis.content;
-    markdown += '\n\n---\n\n';
+    markdown += "\n\n---\n\n";
     markdown += `*Exporté depuis Knowledge AI*\n`;
   } else {
     // Default template
     markdown += analysis.content;
-    markdown += '\n\n---\n\n';
+    markdown += "\n\n---\n\n";
     markdown += `*Exporté le ${formatDate(new Date().toISOString())}*\n`;
   }
 
@@ -98,18 +102,18 @@ export function generateMarkdown(
 // Generate batch Markdown for multiple analyses
 export function generateBatchMarkdown(
   analyses: AnalysisExportData[],
-  _options: ExportOptions = { format: 'markdown' }
+  _options: ExportOptions = { format: "markdown" },
 ): string {
-  let markdown = '# Export des Analyses\n\n';
+  let markdown = "# Export des Analyses\n\n";
   markdown += `*${analyses.length} analyse(s) exportée(s) le ${formatDate(new Date().toISOString())}*\n\n`;
-  markdown += '---\n\n';
+  markdown += "---\n\n";
 
   analyses.forEach((analysis, index) => {
     markdown += `## ${index + 1}. ${analysis.videoTitle}\n\n`;
     markdown += `**Type**: ${getTypeLabel(analysis.type)}\n`;
     markdown += `**Chaîne**: ${analysis.channelName}\n\n`;
     markdown += analysis.content;
-    markdown += '\n\n---\n\n';
+    markdown += "\n\n---\n\n";
   });
 
   return markdown;
@@ -118,12 +122,12 @@ export function generateBatchMarkdown(
 // Export to JSON
 export function generateJSON(
   analyses: AnalysisExportData | AnalysisExportData[],
-  _options: ExportOptions = { format: 'json' }
+  _options: ExportOptions = { format: "json" },
 ): string {
   const data = Array.isArray(analyses) ? analyses : [analyses];
   const exportData = {
     exportedAt: new Date().toISOString(),
-    platform: 'Knowledge AI',
+    platform: "Knowledge AI",
     analyses: data.map((a) => ({
       ...a,
       typeLabel: getTypeLabel(a.type),
@@ -138,18 +142,18 @@ export async function copyToClipboard(content: string): Promise<boolean> {
     await navigator.clipboard.writeText(content);
     return true;
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error);
+    console.error("Failed to copy to clipboard:", error);
     // Fallback for older browsers
-    const textArea = document.createElement('textarea');
+    const textArea = document.createElement("textarea");
     textArea.value = content;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
     try {
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textArea);
       return true;
     } catch {
@@ -160,10 +164,14 @@ export async function copyToClipboard(content: string): Promise<boolean> {
 }
 
 // Download file
-export function downloadFile(content: string, filename: string, mimeType: string): void {
+export function downloadFile(
+  content: string,
+  filename: string,
+  mimeType: string,
+): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
@@ -175,7 +183,7 @@ export function downloadFile(content: string, filename: string, mimeType: string
 // Download Markdown
 export function downloadMarkdown(
   analysis: AnalysisExportData | AnalysisExportData[],
-  options: ExportOptions = { format: 'markdown' }
+  options: ExportOptions = { format: "markdown" },
 ): void {
   const isArray = Array.isArray(analysis);
   const content = isArray
@@ -185,41 +193,42 @@ export function downloadMarkdown(
   const filename =
     options.filename ||
     (isArray
-      ? `analyses-export-${new Date().toISOString().split('T')[0]}.md`
-      : `${(analysis as AnalysisExportData).type}-${new Date().toISOString().split('T')[0]}.md`);
+      ? `analyses-export-${new Date().toISOString().split("T")[0]}.md`
+      : `${(analysis as AnalysisExportData).type}-${new Date().toISOString().split("T")[0]}.md`);
 
-  downloadFile(content, filename, 'text/markdown');
+  downloadFile(content, filename, "text/markdown");
 }
 
 // Download JSON
 export function downloadJSON(
   analysis: AnalysisExportData | AnalysisExportData[],
-  options: ExportOptions = { format: 'json' }
+  options: ExportOptions = { format: "json" },
 ): void {
   const content = generateJSON(analysis, options);
   const filename =
-    options.filename || `analyses-export-${new Date().toISOString().split('T')[0]}.json`;
-  downloadFile(content, filename, 'application/json');
+    options.filename ||
+    `analyses-export-${new Date().toISOString().split("T")[0]}.json`;
+  downloadFile(content, filename, "application/json");
 }
 
 // Generate PDF from HTML element
 export async function generatePDFFromElement(
   element: HTMLElement,
-  filename: string = 'export.pdf'
+  filename: string = "export.pdf",
 ): Promise<void> {
   try {
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       logging: false,
-      backgroundColor: '#0D0D0D', // Dark background
+      backgroundColor: "#0D0D0D", // Dark background
     });
 
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -230,10 +239,17 @@ export async function generatePDFFromElement(
     const imgX = (pdfWidth - imgWidth * ratio) / 2;
     const imgY = 10;
 
-    pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+    pdf.addImage(
+      imgData,
+      "PNG",
+      imgX,
+      imgY,
+      imgWidth * ratio,
+      imgHeight * ratio,
+    );
     pdf.save(filename);
   } catch (error) {
-    console.error('Failed to generate PDF:', error);
+    console.error("Failed to generate PDF:", error);
     throw error;
   }
 }
@@ -241,12 +257,12 @@ export async function generatePDFFromElement(
 // Generate PDF from markdown content
 export async function generatePDFFromMarkdown(
   analysis: AnalysisExportData,
-  options: ExportOptions = { format: 'pdf' }
+  options: ExportOptions = { format: "pdf" },
 ): Promise<void> {
   const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
   });
 
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -259,11 +275,11 @@ export async function generatePDFFromMarkdown(
   const addText = (
     text: string,
     fontSize: number,
-    fontStyle: 'normal' | 'bold' = 'normal',
-    color: [number, number, number] = [255, 255, 255]
+    fontStyle: "normal" | "bold" = "normal",
+    color: [number, number, number] = [255, 255, 255],
   ) => {
     pdf.setFontSize(fontSize);
-    pdf.setFont('helvetica', fontStyle);
+    pdf.setFont("helvetica", fontStyle);
     pdf.setTextColor(...color);
 
     const lines = pdf.splitTextToSize(text, contentWidth);
@@ -281,16 +297,21 @@ export async function generatePDFFromMarkdown(
 
   // Set dark background
   pdf.setFillColor(13, 13, 13);
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+  pdf.rect(0, 0, pageWidth, pageHeight, "F");
 
   // Title
-  addText(getTypeLabel(analysis.type), 24, 'bold', [171, 244, 63]); // Lime color
+  addText(getTypeLabel(analysis.type), 24, "bold", [171, 244, 63]); // Lime color
   yPosition += 5;
 
   // Metadata
-  addText(`Vidéo: ${analysis.videoTitle}`, 10, 'normal', [156, 163, 175]);
-  addText(`Chaîne: ${analysis.channelName}`, 10, 'normal', [156, 163, 175]);
-  addText(`Généré le: ${formatDate(analysis.createdAt)}`, 10, 'normal', [156, 163, 175]);
+  addText(`Vidéo: ${analysis.videoTitle}`, 10, "normal", [156, 163, 175]);
+  addText(`Chaîne: ${analysis.channelName}`, 10, "normal", [156, 163, 175]);
+  addText(
+    `Généré le: ${formatDate(analysis.createdAt)}`,
+    10,
+    "normal",
+    [156, 163, 175],
+  );
   yPosition += 10;
 
   // Separator
@@ -299,35 +320,35 @@ export async function generatePDFFromMarkdown(
   yPosition += 10;
 
   // Content
-  addText(analysis.content, 11, 'normal', [229, 231, 235]);
+  addText(analysis.content, 11, "normal", [229, 231, 235]);
 
   // Footer
   yPosition = pageHeight - 15;
-  addText('Exporté depuis Knowledge AI', 8, 'normal', [107, 114, 128]);
+  addText("Exporté depuis Knowledge AI", 8, "normal", [107, 114, 128]);
 
   const filename =
     options.filename ||
-    `${analysis.type}-${analysis.videoTitle.slice(0, 30)}-${new Date().toISOString().split('T')[0]}.pdf`;
+    `${analysis.type}-${analysis.videoTitle.slice(0, 30)}-${new Date().toISOString().split("T")[0]}.pdf`;
 
-  pdf.save(filename.replace(/[^a-zA-Z0-9-_.]/g, '_'));
+  pdf.save(filename.replace(/[^a-zA-Z0-9-_.]/g, "_"));
 }
 
 // Main export function
 export async function exportAnalysis(
   analysis: AnalysisExportData | AnalysisExportData[],
-  options: ExportOptions
+  options: ExportOptions,
 ): Promise<{ success: boolean; message: string }> {
   try {
     switch (options.format) {
-      case 'markdown':
+      case "markdown":
         downloadMarkdown(analysis, options);
-        return { success: true, message: 'Export Markdown réussi' };
+        return { success: true, message: "Export Markdown réussi" };
 
-      case 'json':
+      case "json":
         downloadJSON(analysis, options);
-        return { success: true, message: 'Export JSON réussi' };
+        return { success: true, message: "Export JSON réussi" };
 
-      case 'pdf':
+      case "pdf":
         if (Array.isArray(analysis)) {
           if (analysis.length > 0) {
             await generatePDFFromMarkdown(analysis[0], options);
@@ -335,14 +356,14 @@ export async function exportAnalysis(
         } else {
           await generatePDFFromMarkdown(analysis, options);
         }
-        return { success: true, message: 'Export PDF réussi' };
+        return { success: true, message: "Export PDF réussi" };
 
       default:
-        return { success: false, message: 'Format non supporté' };
+        return { success: false, message: "Format non supporté" };
     }
   } catch (error) {
-    console.error('Export failed:', error);
-    return { success: false, message: 'Erreur lors de l\'export' };
+    console.error("Export failed:", error);
+    return { success: false, message: "Erreur lors de l'export" };
   }
 }
 

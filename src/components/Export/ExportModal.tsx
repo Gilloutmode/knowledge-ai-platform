@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   FileText,
@@ -10,7 +10,7 @@ import {
   Loader2,
   Download,
   Settings,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   ExportFormat,
   ExportOptions,
@@ -18,7 +18,7 @@ import {
   exportAnalysis,
   copyToClipboard,
   generateMarkdown,
-} from '../../services/export';
+} from "../../services/export";
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -27,31 +27,52 @@ interface ExportModalProps {
   singleAnalysis?: boolean;
 }
 
-const formatOptions: { format: ExportFormat; label: string; icon: React.ReactNode; description: string }[] = [
+const formatOptions: {
+  format: ExportFormat;
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}[] = [
   {
-    format: 'markdown',
-    label: 'Markdown',
+    format: "markdown",
+    label: "Markdown",
     icon: <FileText size={20} />,
-    description: 'Format texte structuré, idéal pour notes et documentation',
+    description: "Format texte structuré, idéal pour notes et documentation",
   },
   {
-    format: 'pdf',
-    label: 'PDF',
+    format: "pdf",
+    label: "PDF",
     icon: <FileDown size={20} />,
-    description: 'Document formaté, idéal pour partage et impression',
+    description: "Document formaté, idéal pour partage et impression",
   },
   {
-    format: 'json',
-    label: 'JSON',
+    format: "json",
+    label: "JSON",
     icon: <FileJson size={20} />,
-    description: 'Données brutes, idéal pour intégration technique',
+    description: "Données brutes, idéal pour intégration technique",
   },
 ];
 
-const templateOptions: { value: ExportOptions['template']; label: string; description: string }[] = [
-  { value: 'default', label: 'Standard', description: 'Contenu avec informations de base' },
-  { value: 'minimal', label: 'Minimal', description: 'Contenu uniquement, sans métadonnées' },
-  { value: 'detailed', label: 'Détaillé', description: 'Toutes les informations disponibles' },
+const templateOptions: {
+  value: ExportOptions["template"];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "default",
+    label: "Standard",
+    description: "Contenu avec informations de base",
+  },
+  {
+    value: "minimal",
+    label: "Minimal",
+    description: "Contenu uniquement, sans métadonnées",
+  },
+  {
+    value: "detailed",
+    label: "Détaillé",
+    description: "Toutes les informations disponibles",
+  },
 ];
 
 export const ExportModal: React.FC<ExportModalProps> = ({
@@ -60,13 +81,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   analyses,
   singleAnalysis = false,
 }) => {
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('markdown');
-  const [template, setTemplate] = useState<ExportOptions['template']>('default');
+  const [selectedFormat, setSelectedFormat] =
+    useState<ExportFormat>("markdown");
+  const [template, setTemplate] =
+    useState<ExportOptions["template"]>("default");
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [includeTimestamps, setIncludeTimestamps] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [exportResult, setExportResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleExport = async () => {
@@ -80,7 +106,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       includeTimestamps,
     };
 
-    const result = await exportAnalysis(singleAnalysis ? analyses[0] : analyses, options);
+    const result = await exportAnalysis(
+      singleAnalysis ? analyses[0] : analyses,
+      options,
+    );
     setExportResult(result);
     setIsExporting(false);
 
@@ -96,7 +125,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     if (analyses.length === 0) return;
 
     const content = generateMarkdown(analyses[0], {
-      format: 'markdown',
+      format: "markdown",
       template,
       includeMetadata,
       includeTimestamps,
@@ -131,7 +160,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <div className="flex items-center justify-between p-4 border-b dark:border-dark-border border-light-border">
             <div>
               <h2 className="text-lg font-semibold dark:text-white text-gray-900">
-                Exporter {singleAnalysis ? 'l\'analyse' : `${analyses.length} analyses`}
+                Exporter{" "}
+                {singleAnalysis ? "l'analyse" : `${analyses.length} analyses`}
               </h2>
               <p className="text-sm dark:text-gray-400 text-gray-500 mt-0.5">
                 Choisissez le format et les options d'export
@@ -159,8 +189,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     onClick={() => setSelectedFormat(option.format)}
                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
                       selectedFormat === option.format
-                        ? 'bg-lime/20 border-lime dark:text-lime text-lime-dark'
-                        : 'dark:bg-dark-700 bg-light-100 dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 dark:hover:border-gray-600 hover:border-gray-400'
+                        ? "bg-lime/20 border-lime dark:text-lime text-lime-dark"
+                        : "dark:bg-dark-700 bg-light-100 dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 dark:hover:border-gray-600 hover:border-gray-400"
                     }`}
                   >
                     {option.icon}
@@ -169,7 +199,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 ))}
               </div>
               <p className="mt-2 text-xs dark:text-gray-500 text-gray-400">
-                {formatOptions.find((o) => o.format === selectedFormat)?.description}
+                {
+                  formatOptions.find((o) => o.format === selectedFormat)
+                    ?.description
+                }
               </p>
             </div>
 
@@ -180,7 +213,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             >
               <Settings size={14} />
               Options avancées
-              <span className="text-xs">({showAdvanced ? '−' : '+'})</span>
+              <span className="text-xs">({showAdvanced ? "−" : "+"})</span>
             </button>
 
             {/* Advanced Options */}
@@ -188,12 +221,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               {showAdvanced && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden space-y-4"
                 >
                   {/* Template Selection (only for markdown/pdf) */}
-                  {selectedFormat !== 'json' && (
+                  {selectedFormat !== "json" && (
                     <div>
                       <label className="block text-sm font-medium dark:text-gray-300 text-gray-600 mb-2">
                         Modèle
@@ -205,17 +238,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                             onClick={() => setTemplate(option.value)}
                             className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left ${
                               template === option.value
-                                ? 'bg-lime/10 border-lime/30 dark:text-white text-gray-900'
-                                : 'dark:bg-dark-700 bg-light-100 dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600'
+                                ? "bg-lime/10 border-lime/30 dark:text-white text-gray-900"
+                                : "dark:bg-dark-700 bg-light-100 dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600"
                             }`}
                           >
                             <div>
-                              <span className="font-medium text-sm">{option.label}</span>
+                              <span className="font-medium text-sm">
+                                {option.label}
+                              </span>
                               <p className="text-xs dark:text-gray-500 text-gray-400 mt-0.5">
                                 {option.description}
                               </p>
                             </div>
-                            {template === option.value && <Check size={16} className="dark:text-lime text-lime-dark" />}
+                            {template === option.value && (
+                              <Check
+                                size={16}
+                                className="dark:text-lime text-lime-dark"
+                              />
+                            )}
                           </button>
                         ))}
                       </div>
@@ -227,13 +267,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <div
                         className={`relative w-10 h-6 rounded-full transition-colors ${
-                          includeMetadata ? 'bg-lime' : 'dark:bg-dark-600 bg-light-300'
+                          includeMetadata
+                            ? "bg-lime"
+                            : "dark:bg-dark-600 bg-light-300"
                         }`}
                         onClick={() => setIncludeMetadata(!includeMetadata)}
                       >
                         <div
                           className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                            includeMetadata ? 'translate-x-5' : 'translate-x-1'
+                            includeMetadata ? "translate-x-5" : "translate-x-1"
                           }`}
                         />
                       </div>
@@ -245,13 +287,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <div
                         className={`relative w-10 h-6 rounded-full transition-colors ${
-                          includeTimestamps ? 'bg-lime' : 'dark:bg-dark-600 bg-light-300'
+                          includeTimestamps
+                            ? "bg-lime"
+                            : "dark:bg-dark-600 bg-light-300"
                         }`}
                         onClick={() => setIncludeTimestamps(!includeTimestamps)}
                       >
                         <div
                           className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                            includeTimestamps ? 'translate-x-5' : 'translate-x-1'
+                            includeTimestamps
+                              ? "translate-x-5"
+                              : "translate-x-1"
                           }`}
                         />
                       </div>
@@ -271,8 +317,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className={`p-3 rounded-lg ${
                   exportResult.success
-                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                    : "bg-red-500/10 text-red-400 border border-red-500/20"
                 }`}
               >
                 {exportResult.message}
@@ -283,7 +329,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Footer */}
           <div className="flex items-center justify-between p-4 border-t dark:border-dark-border border-light-border dark:bg-dark-900/50 bg-light-100/50">
             {/* Copy Button (only for single markdown) */}
-            {singleAnalysis && selectedFormat === 'markdown' && (
+            {singleAnalysis && selectedFormat === "markdown" && (
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-dark-700 hover:bg-light-200 rounded-lg transition-all"
@@ -301,7 +347,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 )}
               </button>
             )}
-            {!singleAnalysis || selectedFormat !== 'markdown' ? <div /> : null}
+            {!singleAnalysis || selectedFormat !== "markdown" ? <div /> : null}
 
             {/* Export Button */}
             <button

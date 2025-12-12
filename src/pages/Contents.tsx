@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   Clock,
@@ -23,17 +29,23 @@ import {
   PlayCircle,
   Search,
   X,
-} from 'lucide-react';
-import { videosApi, analysesApi, channelsApi, Video, Channel } from '../services/api';
-import { VideoDetailPanel } from '../components/VideoDetailPanel';
-import { SourceBadge } from '../components/ui/SourceBadge';
+} from "lucide-react";
+import {
+  videosApi,
+  analysesApi,
+  channelsApi,
+  Video,
+  Channel,
+} from "../services/api";
+import { VideoDetailPanel } from "../components/VideoDetailPanel";
+import { SourceBadge } from "../components/ui/SourceBadge";
 
 const CONTENTS_PER_PAGE = 20;
 
-type ViewMode = 'grid' | 'list';
-type StatusFilter = 'all' | 'pending' | 'analyzed';
-type SourceFilter = 'all' | 'youtube' | 'rss' | 'document';
-type YouTubeView = 'channels' | 'videos';
+type ViewMode = "grid" | "list";
+type StatusFilter = "all" | "pending" | "analyzed";
+type SourceFilter = "all" | "youtube" | "rss" | "document";
+type YouTubeView = "channels" | "videos";
 
 interface ContentsPageProps {
   searchQuery?: string;
@@ -42,27 +54,67 @@ interface ContentsPageProps {
 
 // Analysis types configuration
 const ANALYSIS_TYPES = [
-  { id: 'transcript', icon: FileText, color: 'text-gray-400', label: 'Transcription' },
-  { id: 'summary_short', icon: Zap, color: 'dark:text-lime text-lime-dark', label: 'Résumé court' },
-  { id: 'summary_detailed', icon: BookOpen, color: 'dark:text-cyan text-cyan-dark', label: 'Résumé détaillé' },
-  { id: 'lesson_card', icon: GraduationCap, color: 'text-purple-400', label: 'Fiche de cours' },
-  { id: 'actions', icon: CheckSquare, color: 'text-green-400', label: 'Actions' },
-  { id: 'flashcards', icon: Layers, color: 'text-orange-400', label: 'Flashcards' },
+  {
+    id: "transcript",
+    icon: FileText,
+    color: "text-gray-400",
+    label: "Transcription",
+  },
+  {
+    id: "summary_short",
+    icon: Zap,
+    color: "dark:text-lime text-lime-dark",
+    label: "Résumé court",
+  },
+  {
+    id: "summary_detailed",
+    icon: BookOpen,
+    color: "dark:text-cyan text-cyan-dark",
+    label: "Résumé détaillé",
+  },
+  {
+    id: "lesson_card",
+    icon: GraduationCap,
+    color: "text-purple-400",
+    label: "Fiche de cours",
+  },
+  {
+    id: "actions",
+    icon: CheckSquare,
+    color: "text-green-400",
+    label: "Actions",
+  },
+  {
+    id: "flashcards",
+    icon: Layers,
+    color: "text-orange-400",
+    label: "Flashcards",
+  },
 ];
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const config: Record<string, { icon: React.ElementType; label: string; class: string }> = {
-    pending: { icon: Clock, label: 'En attente', class: 'badge' },
-    processing: { icon: Loader2, label: 'Analyse...', class: 'badge-warning' },
-    completed: { icon: CheckCircle, label: 'Analysé', class: 'badge-success' },
-    failed: { icon: AlertCircle, label: 'Erreur', class: 'badge-error' },
+  const config: Record<
+    string,
+    { icon: React.ElementType; label: string; class: string }
+  > = {
+    pending: { icon: Clock, label: "En attente", class: "badge" },
+    processing: { icon: Loader2, label: "Analyse...", class: "badge-warning" },
+    completed: { icon: CheckCircle, label: "Analysé", class: "badge-success" },
+    failed: { icon: AlertCircle, label: "Erreur", class: "badge-error" },
   };
 
-  const { icon: Icon, label, class: badgeClass } = config[status] || config.pending;
+  const {
+    icon: Icon,
+    label,
+    class: badgeClass,
+  } = config[status] || config.pending;
 
   return (
     <span className={`badge ${badgeClass} flex items-center gap-1`}>
-      <Icon size={12} className={status === 'processing' ? 'animate-spin' : ''} />
+      <Icon
+        size={12}
+        className={status === "processing" ? "animate-spin" : ""}
+      />
       {label}
     </span>
   );
@@ -92,10 +144,10 @@ function formatRelativeDate(dateString: string): string {
 
   if (diffHours < 1) return "À l'instant";
   if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays === 1) return 'Hier';
+  if (diffDays === 1) return "Hier";
   if (diffDays < 7) return `Il y a ${diffDays}j`;
   if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)}sem`;
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
 interface ContentCardProps {
@@ -112,15 +164,20 @@ const AnalysisCountBadge: React.FC<{ count: number }> = ({ count }) => {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-lime/20 dark:text-lime text-lime-dark">
       <CheckCircle size={12} />
-      {count} analyse{count > 1 ? 's' : ''}
+      {count} analyse{count > 1 ? "s" : ""}
     </span>
   );
 };
 
-const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes = [], viewMode }) => {
-  const status = video.is_analyzed ? 'completed' : 'pending';
+const ContentCard: React.FC<ContentCardProps> = ({
+  video,
+  onClick,
+  analysisTypes = [],
+  viewMode,
+}) => {
+  const status = video.is_analyzed ? "completed" : "pending";
 
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <motion.div
         onClick={onClick}
@@ -131,11 +188,12 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
         {/* Thumbnail */}
         <div className="relative w-40 h-24 flex-shrink-0 rounded-lg overflow-hidden dark:bg-dark-700 bg-light-300">
           <img
-            src={video.thumbnail_url || ''}
+            src={video.thumbnail_url || ""}
             alt={video.title}
             className="w-full h-full object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/160x90/1a1a1a/666?text=Video';
+              (e.target as HTMLImageElement).src =
+                "https://via.placeholder.com/160x90/1a1a1a/666?text=Video";
             }}
           />
           {video.duration && (
@@ -148,7 +206,9 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1">{video.title}</h3>
+            <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1">
+              {video.title}
+            </h3>
             <div className="flex items-center gap-2 flex-shrink-0">
               <SourceBadge type="youtube" />
               <AnalysisCountBadge count={analysisTypes.length} />
@@ -167,7 +227,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
                   className={`p-1 rounded ${
                     hasAnalysis
                       ? `${type.color} dark:bg-dark-700 bg-light-200`
-                      : 'dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50'
+                      : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50"
                   }`}
                   title={type.label}
                 >
@@ -201,11 +261,12 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
       {/* Thumbnail */}
       <div className="relative aspect-video dark:bg-dark-700 bg-light-300">
         <img
-          src={video.thumbnail_url || ''}
+          src={video.thumbnail_url || ""}
           alt={video.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/320x180/1a1a1a/666?text=Video';
+            (e.target as HTMLImageElement).src =
+              "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
           }}
         />
 
@@ -223,7 +284,10 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
 
         {/* Play overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
-          <PlayCircle size={48} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          <PlayCircle
+            size={48}
+            className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          />
         </div>
       </div>
 
@@ -250,7 +314,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ video, onClick, analysisTypes
                 className={`p-1 rounded transition-all ${
                   hasAnalysis
                     ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30`
-                    : 'dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50'
+                    : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50"
                 }`}
                 title={type.label}
               >
@@ -279,14 +343,19 @@ interface ChannelsGridProps {
   onViewVideos: (channelId: string) => void;
 }
 
-const ChannelsGrid: React.FC<ChannelsGridProps> = ({ channels, onViewVideos }) => {
+const ChannelsGrid: React.FC<ChannelsGridProps> = ({
+  channels,
+  onViewVideos,
+}) => {
   if (channels.length === 0) {
     return (
       <div className="text-center py-16">
         <div className="inline-flex p-4 dark:bg-dark-700 bg-light-200 rounded-2xl mb-4">
           <Users size={32} className="dark:text-lime text-lime-dark" />
         </div>
-        <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucune chaîne</h2>
+        <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+          Aucune chaîne
+        </h2>
         <p className="dark:text-gray-400 text-gray-500">
           Ajoutez des chaînes YouTube depuis la page Sources.
         </p>
@@ -313,7 +382,10 @@ const ChannelsGrid: React.FC<ChannelsGridProps> = ({ channels, onViewVideos }) =
               />
             ) : (
               <div className="w-24 h-24 rounded-full dark:bg-dark-600 bg-light-200 flex items-center justify-center">
-                <Youtube size={32} className="dark:text-gray-500 text-gray-400" />
+                <Youtube
+                  size={32}
+                  className="dark:text-gray-500 text-gray-400"
+                />
               </div>
             )}
           </div>
@@ -327,7 +399,9 @@ const ChannelsGrid: React.FC<ChannelsGridProps> = ({ channels, onViewVideos }) =
               {/* Subscriber count */}
               <div className="flex items-center justify-center gap-1 text-xs dark:text-gray-400 text-gray-500 mt-1">
                 <Users size={12} />
-                <span>{formatSubscribers(channel.subscriber_count)} abonnés</span>
+                <span>
+                  {formatSubscribers(channel.subscriber_count)} abonnés
+                </span>
               </div>
               {/* Video count */}
               <p className="text-xs dark:text-gray-500 text-gray-400 mt-0.5">
@@ -355,15 +429,17 @@ const ChannelsGrid: React.FC<ChannelsGridProps> = ({ channels, onViewVideos }) =
   );
 };
 
-export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) => {
+export const ContentsPage: React.FC<ContentsPageProps> = ({
+  searchQuery = "",
+}) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [channelFilter, setChannelFilter] = useState<string>(
-    searchParams.get('channel') || 'all'
+    searchParams.get("channel") || "all",
   );
-  const [youtubeView, setYoutubeView] = useState<YouTubeView>('videos');
+  const [youtubeView, setYoutubeView] = useState<YouTubeView>("videos");
   const [showYoutubeMenu, setShowYoutubeMenu] = useState(false);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [contents, setContents] = useState<Video[]>([]);
@@ -374,55 +450,60 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
   const [totalContents, setTotalContents] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Video | null>(null);
-  const [contentAnalyses, setContentAnalyses] = useState<Record<string, string[]>>({});
-  const [localSearch, setLocalSearch] = useState('');
+  const [contentAnalyses, setContentAnalyses] = useState<
+    Record<string, string[]>
+  >({});
+  const [localSearch, setLocalSearch] = useState("");
 
   // Initialize filters from URL params
   useEffect(() => {
-    const urlSource = searchParams.get('source');
-    const urlChannel = searchParams.get('channel');
-    const urlFilter = searchParams.get('filter');
-    const urlView = searchParams.get('view');
-    const urlVideoId = searchParams.get('videoId');
+    const urlSource = searchParams.get("source");
+    const urlChannel = searchParams.get("channel");
+    const urlFilter = searchParams.get("filter");
+    const urlView = searchParams.get("view");
+    const urlVideoId = searchParams.get("videoId");
 
-    if (urlSource && ['youtube', 'rss', 'document'].includes(urlSource)) {
+    if (urlSource && ["youtube", "rss", "document"].includes(urlSource)) {
       setSourceFilter(urlSource as SourceFilter);
     }
     if (urlChannel) {
-      setSourceFilter('youtube');
+      setSourceFilter("youtube");
       setChannelFilter(urlChannel);
-      setYoutubeView('videos');
+      setYoutubeView("videos");
     }
-    if (urlView === 'channels' || urlView === 'videos') {
+    if (urlView === "channels" || urlView === "videos") {
       setYoutubeView(urlView);
-      if (urlView === 'channels') {
-        setSourceFilter('youtube');
+      if (urlView === "channels") {
+        setSourceFilter("youtube");
       }
     }
-    if (urlFilter === 'pending') setStatusFilter('pending');
-    if (urlFilter === 'analyzed') setStatusFilter('analyzed');
+    if (urlFilter === "pending") setStatusFilter("pending");
+    if (urlFilter === "analyzed") setStatusFilter("analyzed");
 
     // Auto-open video detail panel if videoId is provided
     if (urlVideoId) {
-      videosApi.get(urlVideoId).then((video) => {
-        setSelectedContent(video);
-        // Clear videoId from URL after opening
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('videoId');
-        setSearchParams(newParams, { replace: true });
-      }).catch((err) => {
-        console.error('Error fetching video:', err);
-      });
+      videosApi
+        .get(urlVideoId)
+        .then((video) => {
+          setSelectedContent(video);
+          // Clear videoId from URL after opening
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("videoId");
+          setSearchParams(newParams, { replace: true });
+        })
+        .catch((err) => {
+          console.error("Error fetching video:", err);
+        });
     }
   }, [searchParams, setSearchParams]); // React to URL changes
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
-    if (sourceFilter !== 'all') params.set('source', sourceFilter);
-    if (sourceFilter === 'youtube') params.set('view', youtubeView);
-    if (channelFilter !== 'all') params.set('channel', channelFilter);
-    if (statusFilter !== 'all') params.set('filter', statusFilter);
+    if (sourceFilter !== "all") params.set("source", sourceFilter);
+    if (sourceFilter === "youtube") params.set("view", youtubeView);
+    if (channelFilter !== "all") params.set("channel", channelFilter);
+    if (statusFilter !== "all") params.set("filter", statusFilter);
     setSearchParams(params, { replace: true });
   }, [sourceFilter, channelFilter, statusFilter, youtubeView, setSearchParams]);
 
@@ -433,7 +514,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
         const channelsList = await channelsApi.list();
         setChannels(channelsList);
       } catch (err) {
-        console.error('Error fetching channels:', err);
+        console.error("Error fetching channels:", err);
       }
     };
     fetchChannels();
@@ -442,14 +523,14 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
   // Handle source filter change with reset
   const handleSourceFilterChange = (newSource: SourceFilter) => {
     setSourceFilter(newSource);
-    if (newSource !== 'youtube') {
-      setChannelFilter('all');
+    if (newSource !== "youtube") {
+      setChannelFilter("all");
     }
   };
 
   // Get selected channel name for breadcrumb
   const selectedChannel = useMemo(() => {
-    if (channelFilter === 'all') return null;
+    if (channelFilter === "all") return null;
     return channels.find((ch) => ch.id === channelFilter);
   }, [channelFilter, channels]);
 
@@ -460,12 +541,12 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
     return channels.filter(
       (ch) =>
         ch.name.toLowerCase().includes(searchLower) ||
-        (ch.niche && ch.niche.toLowerCase().includes(searchLower))
+        (ch.niche && ch.niche.toLowerCase().includes(searchLower)),
     );
   }, [channels, localSearch]);
 
   // Debounced local search for videos API
-  const [debouncedLocalSearch, setDebouncedLocalSearch] = useState('');
+  const [debouncedLocalSearch, setDebouncedLocalSearch] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedLocalSearch(localSearch), 300);
@@ -481,7 +562,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
   }, [searchQuery]);
 
   // Combine search terms (local search takes priority over global)
-  const effectiveSearch = debouncedLocalSearch || debouncedSearch || '';
+  const effectiveSearch = debouncedLocalSearch || debouncedSearch || "";
 
   // Track if it's the first load
   const isFirstLoad = useRef(true);
@@ -502,14 +583,14 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
           limit: CONTENTS_PER_PAGE,
           offset: 0,
           search: effectiveSearch || undefined,
-          channelId: channelFilter !== 'all' ? channelFilter : undefined,
+          channelId: channelFilter !== "all" ? channelFilter : undefined,
         });
         setContents(response.videos);
         setTotalContents(response.total);
         setHasMore(response.hasMore);
       } catch (err) {
-        console.error('Error fetching contents:', err);
-        setError('Impossible de charger les contenus');
+        console.error("Error fetching contents:", err);
+        setError("Impossible de charger les contenus");
         setContents([]);
       } finally {
         setIsInitialLoading(false);
@@ -537,7 +618,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
         });
         setContentAnalyses(analysesMap);
       } catch (err) {
-        console.error('Error fetching analyses:', err);
+        console.error("Error fetching analyses:", err);
       }
     };
 
@@ -554,12 +635,12 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
         limit: CONTENTS_PER_PAGE,
         offset: contents.length,
         search: effectiveSearch || undefined,
-        channelId: channelFilter !== 'all' ? channelFilter : undefined,
+        channelId: channelFilter !== "all" ? channelFilter : undefined,
       });
       setContents((prev) => [...prev, ...response.videos]);
       setHasMore(response.hasMore);
     } catch (err) {
-      console.error('Error loading more:', err);
+      console.error("Error loading more:", err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -570,27 +651,31 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
     let result = [...contents];
 
     // Status filter - use contentAnalyses map instead of is_analyzed field
-    if (statusFilter !== 'all') {
+    if (statusFilter !== "all") {
       result = result.filter((c) => {
-        const hasAnalyses = contentAnalyses[c.id] && contentAnalyses[c.id].length > 0;
-        return statusFilter === 'analyzed' ? hasAnalyses : !hasAnalyses;
+        const hasAnalyses =
+          contentAnalyses[c.id] && contentAnalyses[c.id].length > 0;
+        return statusFilter === "analyzed" ? hasAnalyses : !hasAnalyses;
       });
     }
 
     // Source filter (currently only YouTube, but prepared for future)
-    if (sourceFilter !== 'all' && sourceFilter !== 'youtube') {
+    if (sourceFilter !== "all" && sourceFilter !== "youtube") {
       result = []; // No other sources yet
     }
 
     // Note: Channel filter is now handled server-side via API
 
     return result;
-  }, [contents, statusFilter, sourceFilter, channelFilter, contentAnalyses]);
+  }, [contents, statusFilter, sourceFilter, contentAnalyses]);
 
   if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={32} className="animate-spin dark:text-lime text-lime-dark" />
+        <Loader2
+          size={32}
+          className="animate-spin dark:text-lime text-lime-dark"
+        />
       </div>
     );
   }
@@ -600,23 +685,25 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900">Contents</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900">
+            Contents
+          </h1>
           <p className="dark:text-gray-400 text-gray-500 mt-1">
-            {totalContents} contenu{totalContents !== 1 ? 's' : ''} •{' '}
+            {totalContents} contenu{totalContents !== 1 ? "s" : ""} •{" "}
             {contents.filter((c) => c.is_analyzed).length} analysé
-            {contents.filter((c) => c.is_analyzed).length !== 1 ? 's' : ''}
+            {contents.filter((c) => c.is_analyzed).length !== 1 ? "s" : ""}
           </p>
         </div>
       </div>
 
       {/* Breadcrumb for YouTube views */}
-      {sourceFilter === 'youtube' && youtubeView === 'videos' && (
+      {sourceFilter === "youtube" && youtubeView === "videos" && (
         <div className="flex items-center gap-3 text-sm">
           <button
             onClick={() => {
-              setYoutubeView('channels');
-              setChannelFilter('all');
-              setLocalSearch('');
+              setYoutubeView("channels");
+              setChannelFilter("all");
+              setLocalSearch("");
             }}
             className="flex items-center gap-2 dark:text-gray-400 text-gray-500 hover:text-lime transition-colors"
           >
@@ -636,7 +723,8 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
                 )}
                 {selectedChannel.name}
                 <span className="dark:text-gray-500 text-gray-400 font-normal">
-                  ({filteredContents.length} vidéo{filteredContents.length !== 1 ? 's' : ''})
+                  ({filteredContents.length} vidéo
+                  {filteredContents.length !== 1 ? "s" : ""})
                 </span>
               </span>
             </>
@@ -667,34 +755,40 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
         <div className="flex items-center gap-4">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            {(['all', 'analyzed', 'pending'] as StatusFilter[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`
+            {(["all", "analyzed", "pending"] as StatusFilter[]).map(
+              (status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`
                   px-3 py-1.5 text-sm font-medium rounded-lg transition-all
                   ${
                     statusFilter === status
-                      ? 'bg-lime text-black'
-                      : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+                      ? "bg-lime text-black"
+                      : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
                   }
                 `}
-              >
-                {status === 'all' ? 'Tous' : status === 'analyzed' ? 'Analysés' : 'En attente'}
-              </button>
-            ))}
+                >
+                  {status === "all"
+                    ? "Tous"
+                    : status === "analyzed"
+                      ? "Analysés"
+                      : "En attente"}
+                </button>
+              ),
+            )}
           </div>
 
           {/* Source Tabs */}
           <div className="flex items-center gap-1 pl-4 border-l dark:border-dark-border border-light-border">
             <button
-              onClick={() => handleSourceFilterChange('all')}
+              onClick={() => handleSourceFilterChange("all")}
               className={`
                 px-3 py-1.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2
                 ${
-                  sourceFilter === 'all'
-                    ? 'bg-lime text-black'
-                    : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+                  sourceFilter === "all"
+                    ? "bg-lime text-black"
+                    : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
                 }
               `}
             >
@@ -707,15 +801,18 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
                 className={`
                   px-3 py-1.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2
                   ${
-                    sourceFilter === 'youtube'
-                      ? 'bg-red-500 text-white'
-                      : 'dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900'
+                    sourceFilter === "youtube"
+                      ? "bg-red-500 text-white"
+                      : "dark:bg-dark-700 bg-light-300 dark:text-gray-400 text-gray-500 dark:hover:text-white hover:text-gray-900"
                   }
                 `}
               >
                 <Youtube size={14} />
                 YouTube
-                <ChevronDown size={12} className={`transition-transform ${showYoutubeMenu ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform ${showYoutubeMenu ? "rotate-180" : ""}`}
+                />
               </button>
 
               <AnimatePresence>
@@ -728,16 +825,16 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
                   >
                     <button
                       onClick={() => {
-                        setSourceFilter('youtube');
-                        setYoutubeView('channels');
-                        setChannelFilter('all');
+                        setSourceFilter("youtube");
+                        setYoutubeView("channels");
+                        setChannelFilter("all");
                         setShowYoutubeMenu(false);
-                        setLocalSearch('');
+                        setLocalSearch("");
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                        sourceFilter === 'youtube' && youtubeView === 'channels'
-                          ? 'dark:bg-lime/20 bg-lime/10 dark:text-lime text-lime-dark'
-                          : 'dark:text-gray-300 text-gray-700 dark:hover:bg-dark-700 hover:bg-light-200'
+                        sourceFilter === "youtube" && youtubeView === "channels"
+                          ? "dark:bg-lime/20 bg-lime/10 dark:text-lime text-lime-dark"
+                          : "dark:text-gray-300 text-gray-700 dark:hover:bg-dark-700 hover:bg-light-200"
                       }`}
                     >
                       <Users size={16} />
@@ -748,16 +845,18 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
                     </button>
                     <button
                       onClick={() => {
-                        setSourceFilter('youtube');
-                        setYoutubeView('videos');
-                        setChannelFilter('all');
+                        setSourceFilter("youtube");
+                        setYoutubeView("videos");
+                        setChannelFilter("all");
                         setShowYoutubeMenu(false);
-                        setLocalSearch('');
+                        setLocalSearch("");
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                        sourceFilter === 'youtube' && youtubeView === 'videos' && channelFilter === 'all'
-                          ? 'dark:bg-lime/20 bg-lime/10 dark:text-lime text-lime-dark'
-                          : 'dark:text-gray-300 text-gray-700 dark:hover:bg-dark-700 hover:bg-light-200'
+                        sourceFilter === "youtube" &&
+                        youtubeView === "videos" &&
+                        channelFilter === "all"
+                          ? "dark:bg-lime/20 bg-lime/10 dark:text-lime text-lime-dark"
+                          : "dark:text-gray-300 text-gray-700 dark:hover:bg-dark-700 hover:bg-light-200"
                       }`}
                     >
                       <PlayCircle size={16} />
@@ -803,9 +902,9 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
             <input
               type="text"
               placeholder={
-                sourceFilter === 'youtube' && youtubeView === 'channels'
-                  ? 'Filtrer les chaînes...'
-                  : 'Filtrer les vidéos...'
+                sourceFilter === "youtube" && youtubeView === "channels"
+                  ? "Filtrer les chaînes..."
+                  : "Filtrer les vidéos..."
               }
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
@@ -813,7 +912,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
             />
             {localSearch && !isSearching && (
               <button
-                onClick={() => setLocalSearch('')}
+                onClick={() => setLocalSearch("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 dark:text-gray-500 text-gray-400 hover:dark:text-white hover:text-gray-900 transition-colors"
               >
                 <X size={14} />
@@ -824,14 +923,14 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
           {/* View Mode */}
           <div className="flex items-center dark:bg-dark-700 bg-light-300 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-500'}`}
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-md transition-all ${viewMode === "grid" ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900" : "dark:text-gray-400 text-gray-500"}`}
             >
               <Grid size={18} />
             </button>
             <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'dark:bg-dark-500 bg-white dark:text-white text-gray-900' : 'dark:text-gray-400 text-gray-500'}`}
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md transition-all ${viewMode === "list" ? "dark:bg-dark-500 bg-white dark:text-white text-gray-900" : "dark:text-gray-400 text-gray-500"}`}
             >
               <List size={18} />
             </button>
@@ -840,19 +939,19 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
       </div>
 
       {/* Channels Grid View */}
-      {sourceFilter === 'youtube' && youtubeView === 'channels' && (
+      {sourceFilter === "youtube" && youtubeView === "channels" && (
         <ChannelsGrid
           channels={filteredChannels}
           onViewVideos={(channelId) => {
             setChannelFilter(channelId);
-            setYoutubeView('videos');
-            setLocalSearch('');
+            setYoutubeView("videos");
+            setLocalSearch("");
           }}
         />
       )}
 
       {/* Videos View */}
-      {!(sourceFilter === 'youtube' && youtubeView === 'channels') && (
+      {!(sourceFilter === "youtube" && youtubeView === "channels") && (
         <>
           {/* Empty State */}
           {contents.length === 0 && !error && (
@@ -860,7 +959,9 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
               <div className="inline-flex p-4 dark:bg-dark-700 bg-light-200 rounded-2xl mb-4">
                 <FileText size={32} className="dark:text-lime text-lime-dark" />
               </div>
-              <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">Aucun contenu</h2>
+              <h2 className="text-xl font-semibold dark:text-white text-gray-900 mb-2">
+                Aucun contenu
+              </h2>
               <p className="dark:text-gray-400 text-gray-500">
                 Ajoutez des sources pour commencer à collecter du contenu.
               </p>
@@ -869,7 +970,9 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
 
           {/* Content Grid/List */}
           {filteredContents.length > 0 && (
-            <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+            <div
+              className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}
+            >
               <AnimatePresence>
                 {filteredContents.map((content) => (
                   <ContentCard
@@ -886,37 +989,41 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
 
           {filteredContents.length === 0 && contents.length > 0 && (
             <div className="text-center py-12">
-              <p className="dark:text-gray-500 text-gray-400">Aucun contenu trouvé avec ces filtres</p>
+              <p className="dark:text-gray-500 text-gray-400">
+                Aucun contenu trouvé avec ces filtres
+              </p>
             </div>
           )}
         </>
       )}
 
       {/* Load More */}
-      {!(sourceFilter === 'youtube' && youtubeView === 'channels') && hasMore && filteredContents.length > 0 && (
-        <div className="flex flex-col items-center gap-2 pt-6">
-          <p className="text-sm dark:text-gray-500 text-gray-400">
-            {contents.length} sur {totalContents} contenus affichés
-          </p>
-          <button
-            onClick={loadMore}
-            disabled={isLoadingMore}
-            className="flex items-center gap-2 px-6 py-3 dark:bg-dark-700 bg-white dark:hover:bg-dark-600 hover:bg-light-200 border dark:border-dark-border border-light-border hover:border-lime/30 dark:text-white text-gray-900 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoadingMore ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Chargement...
-              </>
-            ) : (
-              <>
-                <ChevronDown size={18} />
-                Charger plus de contenus
-              </>
-            )}
-          </button>
-        </div>
-      )}
+      {!(sourceFilter === "youtube" && youtubeView === "channels") &&
+        hasMore &&
+        filteredContents.length > 0 && (
+          <div className="flex flex-col items-center gap-2 pt-6">
+            <p className="text-sm dark:text-gray-500 text-gray-400">
+              {contents.length} sur {totalContents} contenus affichés
+            </p>
+            <button
+              onClick={loadMore}
+              disabled={isLoadingMore}
+              className="flex items-center gap-2 px-6 py-3 dark:bg-dark-700 bg-white dark:hover:bg-dark-600 hover:bg-light-200 border dark:border-dark-border border-light-border hover:border-lime/30 dark:text-white text-gray-900 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Chargement...
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={18} />
+                  Charger plus de contenus
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
       {/* Content Detail Panel */}
       {selectedContent && (
@@ -925,9 +1032,11 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({ searchQuery = '' }) 
           onClose={() => setSelectedContent(null)}
           onAnalysisStarted={() => {
             // Refresh after analysis
-            videosApi.list({ limit: CONTENTS_PER_PAGE, offset: 0 }).then((response) => {
-              setContents(response.videos);
-            });
+            videosApi
+              .list({ limit: CONTENTS_PER_PAGE, offset: 0 })
+              .then((response) => {
+                setContents(response.videos);
+              });
           }}
         />
       )}

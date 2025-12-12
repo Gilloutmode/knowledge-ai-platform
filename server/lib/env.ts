@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z } from "zod";
+import { logger } from "./logger";
 
 /**
  * Environment variable validation schema
@@ -6,9 +7,13 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   // Server
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number).default('3001'),
-  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.string().transform(Number).default("3001"),
+  LOG_LEVEL: z
+    .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+    .default("info"),
 
   // Supabase (required for production, optional for demo mode)
   VITE_SUPABASE_URL: z.string().url().optional(),
@@ -29,8 +34,8 @@ const envSchema = z.object({
   // Security
   ALLOW_DEMO_MODE: z
     .string()
-    .transform((val) => val === 'true')
-    .default('false'),
+    .transform((val) => val === "true")
+    .default("false"),
   ALLOWED_ORIGINS: z.string().optional(),
 
   // Redis (optional - falls back to in-memory cache)
@@ -48,29 +53,30 @@ function validateEnv(): Env {
 
   if (!result.success) {
     const errors = result.error.flatten().fieldErrors;
-    const errorMessages = Object.entries(errors)
-      .map(([key, msgs]) => `  - ${key}: ${msgs?.join(', ')}`)
-      .join('\n');
 
-    console.error('\n❌ Environment validation failed:\n');
-    console.error(errorMessages);
-    console.error('\n💡 Check your .env.local file and ensure all required variables are set.\n');
+    logger.error(
+      {
+        errors,
+        hint: "Check your .env.local file and ensure all required variables are set.",
+      },
+      "Environment validation failed",
+    );
 
     // In development, show what's missing
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Current values:');
+    if (process.env.NODE_ENV !== "production") {
+      const currentValues: Record<string, string> = {};
       Object.keys(envSchema.shape).forEach((key) => {
         const value = process.env[key];
-        const masked = value
-          ? key.includes('KEY') || key.includes('SECRET')
-            ? '[REDACTED]'
-            : value.substring(0, 20) + (value.length > 20 ? '...' : '')
-          : '(not set)';
-        console.error(`  ${key}: ${masked}`);
+        currentValues[key] = value
+          ? key.includes("KEY") || key.includes("SECRET")
+            ? "[REDACTED]"
+            : value.substring(0, 20) + (value.length > 20 ? "..." : "")
+          : "(not set)";
       });
+      logger.debug({ currentValues }, "Current environment values");
     }
 
-    throw new Error('Environment validation failed');
+    throw new Error("Environment validation failed");
   }
 
   return result.data;
@@ -94,7 +100,7 @@ export function getEnv(): Env {
  * Check if running in production mode
  */
 export function isProduction(): boolean {
-  return getEnv().NODE_ENV === 'production';
+  return getEnv().NODE_ENV === "production";
 }
 
 /**
@@ -111,7 +117,10 @@ export function isDemoModeAllowed(): boolean {
  */
 export function isSupabaseConfigured(): boolean {
   const env = getEnv();
-  return !!(env.VITE_SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY));
+  return !!(
+    env.VITE_SUPABASE_URL &&
+    (env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY)
+  );
 }
 
 /**
