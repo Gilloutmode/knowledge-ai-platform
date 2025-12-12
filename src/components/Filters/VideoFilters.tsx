@@ -12,27 +12,24 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { Channel } from "../../services/api";
+import {
+  type SortField,
+  type SortOrder,
+  type AnalysisStatus,
+  type VideoFilterState,
+  VIDEO_STORAGE_KEY,
+  saveFiltersToStorage,
+} from "../../lib/videoFilterUtils";
 
-export type SortField =
-  | "published_at"
-  | "view_count"
-  | "like_count"
-  | "duration";
-export type SortOrder = "asc" | "desc";
-export type AnalysisStatus = "all" | "analyzed" | "pending" | "partial";
-
-export interface VideoFilterState {
-  channelId: string | null;
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  minDuration: number | null; // in seconds
-  maxDuration: number | null; // in seconds
-  analysisStatus: AnalysisStatus;
-  sortField: SortField;
-  sortOrder: SortOrder;
-}
+// Re-export for backwards compatibility
+export type { SortField, SortOrder, AnalysisStatus, VideoFilterState };
+/* eslint-disable react-refresh/only-export-components */
+export {
+  defaultVideoFilters,
+  saveFiltersToStorage,
+  loadFiltersFromStorage,
+} from "../../lib/videoFilterUtils";
+/* eslint-enable react-refresh/only-export-components */
 
 interface VideoFiltersProps {
   channels: Channel[];
@@ -42,50 +39,6 @@ interface VideoFiltersProps {
   videoCount?: number;
   filteredCount?: number;
 }
-
-const STORAGE_KEY = "youtube-knowledge-video-filters";
-
-export const defaultVideoFilters: VideoFilterState = {
-  channelId: null,
-  dateRange: { from: null, to: null },
-  minDuration: null,
-  maxDuration: null,
-  analysisStatus: "all",
-  sortField: "published_at",
-  sortOrder: "desc",
-};
-
-export const saveFiltersToStorage = (filters: VideoFilterState): void => {
-  try {
-    const serialized = JSON.stringify({
-      ...filters,
-      dateRange: {
-        from: filters.dateRange.from?.toISOString() || null,
-        to: filters.dateRange.to?.toISOString() || null,
-      },
-    });
-    localStorage.setItem(STORAGE_KEY, serialized);
-  } catch {
-    console.error("Failed to save filters");
-  }
-};
-
-export const loadFiltersFromStorage = (): VideoFilterState | null => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-    const parsed = JSON.parse(stored);
-    return {
-      ...parsed,
-      dateRange: {
-        from: parsed.dateRange.from ? new Date(parsed.dateRange.from) : null,
-        to: parsed.dateRange.to ? new Date(parsed.dateRange.to) : null,
-      },
-    };
-  } catch {
-    return null;
-  }
-};
 
 const durationOptions = [
   { label: "Toutes durées", min: null, max: null },
@@ -147,7 +100,7 @@ export const VideoFilters: React.FC<VideoFiltersProps> = ({
 
   const handleReset = () => {
     onReset();
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(VIDEO_STORAGE_KEY);
     setOpenDropdown(null);
   };
 

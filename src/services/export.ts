@@ -1,5 +1,5 @@
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+// jsPDF and html2canvas are dynamically imported to reduce initial bundle size
+// They're only loaded when PDF export is actually used
 
 export type ExportFormat = "markdown" | "pdf" | "json";
 
@@ -211,12 +211,18 @@ export function downloadJSON(
   downloadFile(content, filename, "application/json");
 }
 
-// Generate PDF from HTML element
+// Generate PDF from HTML element (dynamic import for code splitting)
 export async function generatePDFFromElement(
   element: HTMLElement,
   filename: string = "export.pdf",
 ): Promise<void> {
   try {
+    // Dynamic imports for code splitting - only load when PDF is needed
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+      import("jspdf"),
+      import("html2canvas"),
+    ]);
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -254,11 +260,14 @@ export async function generatePDFFromElement(
   }
 }
 
-// Generate PDF from markdown content
+// Generate PDF from markdown content (dynamic import for code splitting)
 export async function generatePDFFromMarkdown(
   analysis: AnalysisExportData,
   options: ExportOptions = { format: "pdf" },
 ): Promise<void> {
+  // Dynamic import for code splitting - only load when PDF is needed
+  const { default: jsPDF } = await import("jspdf");
+
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",

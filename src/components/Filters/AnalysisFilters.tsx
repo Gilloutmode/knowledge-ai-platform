@@ -11,30 +11,24 @@ import {
   BarChart2,
 } from "lucide-react";
 import { Channel } from "../../services/api";
+import {
+  type AnalysisType,
+  type AnalysisSortField,
+  type SortOrder,
+  type AnalysisFilterState,
+  ANALYSIS_STORAGE_KEY,
+  saveAnalysisFiltersToStorage,
+} from "../../lib/analysisFilterUtils";
 
-export type AnalysisType =
-  | "all"
-  | "transcript"
-  | "summary_short"
-  | "summary_detailed"
-  | "lesson_card"
-  | "actions"
-  | "flashcards";
-
-export type AnalysisSortField = "created_at" | "type" | "video_title";
-export type SortOrder = "asc" | "desc";
-
-export interface AnalysisFilterState {
-  channelId: string | null;
-  videoId: string | null;
-  type: AnalysisType;
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  sortField: AnalysisSortField;
-  sortOrder: SortOrder;
-}
+// Re-export for backwards compatibility
+export type { AnalysisType, AnalysisSortField, SortOrder, AnalysisFilterState };
+/* eslint-disable react-refresh/only-export-components */
+export {
+  defaultAnalysisFilters,
+  saveAnalysisFiltersToStorage,
+  loadAnalysisFiltersFromStorage,
+} from "../../lib/analysisFilterUtils";
+/* eslint-enable react-refresh/only-export-components */
 
 interface AnalysisFiltersProps {
   channels: Channel[];
@@ -44,52 +38,6 @@ interface AnalysisFiltersProps {
   analysisCount?: number;
   filteredCount?: number;
 }
-
-const STORAGE_KEY = "youtube-knowledge-analysis-filters";
-
-export const defaultAnalysisFilters: AnalysisFilterState = {
-  channelId: null,
-  videoId: null,
-  type: "all",
-  dateRange: { from: null, to: null },
-  sortField: "created_at",
-  sortOrder: "desc",
-};
-
-export const saveAnalysisFiltersToStorage = (
-  filters: AnalysisFilterState,
-): void => {
-  try {
-    const serialized = JSON.stringify({
-      ...filters,
-      dateRange: {
-        from: filters.dateRange.from?.toISOString() || null,
-        to: filters.dateRange.to?.toISOString() || null,
-      },
-    });
-    localStorage.setItem(STORAGE_KEY, serialized);
-  } catch {
-    console.error("Failed to save analysis filters");
-  }
-};
-
-export const loadAnalysisFiltersFromStorage =
-  (): AnalysisFilterState | null => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return null;
-      const parsed = JSON.parse(stored);
-      return {
-        ...parsed,
-        dateRange: {
-          from: parsed.dateRange.from ? new Date(parsed.dateRange.from) : null,
-          to: parsed.dateRange.to ? new Date(parsed.dateRange.to) : null,
-        },
-      };
-    } catch {
-      return null;
-    }
-  };
 
 const typeOptions: { value: AnalysisType; label: string; icon: string }[] = [
   { value: "all", label: "Tous les types", icon: "📊" },
@@ -146,7 +94,7 @@ export const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
 
   const handleReset = () => {
     onReset();
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ANALYSIS_STORAGE_KEY);
     setOpenDropdown(null);
   };
 

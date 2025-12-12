@@ -29,6 +29,23 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // React core
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            // UI libraries
+            'vendor-ui': ['framer-motion', 'lucide-react'],
+            // Supabase
+            'vendor-supabase': ['@supabase/supabase-js'],
+            // Utilities
+            'vendor-utils': ['date-fns', 'zod', 'dompurify'],
+            // Data/charts (if used)
+            'vendor-data': ['@tanstack/react-virtual'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 600,
     },
 
     // Environment variables - only expose safe public vars
