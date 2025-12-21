@@ -233,6 +233,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                           <img
                             src={channel.thumbnail_url || ""}
                             alt={channel.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-8 h-8 rounded-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
@@ -368,6 +370,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <img
                 src={selectedChannel.thumbnail_url || ""}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="w-4 h-4 rounded-full"
               />
               {selectedChannel.name}

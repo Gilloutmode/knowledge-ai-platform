@@ -264,6 +264,8 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onClick }) => {
           <img
             src={thumbnail}
             alt={videoTitle}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
@@ -403,6 +405,8 @@ const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
                 <img
                   src={thumbnail}
                   alt={videoTitle}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
@@ -571,6 +575,8 @@ const GroupedByVideoSection: React.FC<GroupedByVideoSectionProps> = ({
               <img
                 src={group.video.thumbnail_url || ""}
                 alt={group.video.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
@@ -699,6 +705,8 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({
                   <img
                     src={group.channel.thumbnail_url}
                     alt={group.channel.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -747,6 +755,8 @@ const GroupedByChannelSection: React.FC<GroupedByChannelSectionProps> = ({
                         <img
                           src={video.thumbnail_url || ""}
                           alt={video.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =

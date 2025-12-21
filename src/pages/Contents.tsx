@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
@@ -41,6 +42,9 @@ import { VideoDetailPanel } from "../components/VideoDetailPanel";
 import { SourceBadge } from "../components/ui/SourceBadge";
 
 const CONTENTS_PER_PAGE = 20;
+
+// Stable empty array to prevent re-renders when content has no analyses
+const EMPTY_ANALYSIS_TYPES: string[] = [];
 
 type ViewMode = "grid" | "list";
 type StatusFilter = "all" | "pending" | "analyzed";
@@ -169,64 +173,151 @@ const AnalysisCountBadge: React.FC<{ count: number }> = ({ count }) => {
   );
 };
 
-const ContentCard: React.FC<ContentCardProps> = ({
-  video,
-  onClick,
-  analysisTypes = [],
-  viewMode,
-}) => {
-  const status = video.is_analyzed ? "completed" : "pending";
+const ContentCard: React.FC<ContentCardProps> = React.memo(
+  ({ video, onClick, analysisTypes = [], viewMode }) => {
+    const status = video.is_analyzed ? "completed" : "pending";
 
-  if (viewMode === "list") {
+    if (viewMode === "list") {
+      return (
+        <motion.div
+          onClick={onClick}
+          className="flex items-center gap-4 p-4 dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl cursor-pointer hover:border-lime/30 transition-all"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {/* Thumbnail */}
+          <div className="relative w-40 h-24 flex-shrink-0 rounded-lg overflow-hidden dark:bg-dark-700 bg-light-300">
+            <img
+              src={video.thumbnail_url || ""}
+              alt={video.title}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://via.placeholder.com/160x90/1a1a1a/666?text=Video";
+              }}
+            />
+            {video.duration && (
+              <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs text-white">
+                {video.duration}
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1">
+                {video.title}
+              </h3>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <SourceBadge type="youtube" />
+                <AnalysisCountBadge count={analysisTypes.length} />
+                <StatusBadge status={status} />
+              </div>
+            </div>
+
+            {/* Analysis badges */}
+            <div className="flex items-center gap-1.5 mt-2">
+              {ANALYSIS_TYPES.map((type) => {
+                const hasAnalysis = analysisTypes.includes(type.id);
+                const Icon = type.icon;
+                return (
+                  <div
+                    key={type.id}
+                    className={`p-1 rounded ${
+                      hasAnalysis
+                        ? `${type.color} dark:bg-dark-700 bg-light-200`
+                        : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50"
+                    }`}
+                    title={type.label}
+                  >
+                    <Icon size={14} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-4 mt-2 text-xs dark:text-gray-400 text-gray-500">
+              <span className="flex items-center gap-1">
+                <Eye size={12} />
+                {formatViews(video.view_count)}
+              </span>
+              <span>{formatRelativeDate(video.published_at)}</span>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Grid view
     return (
       <motion.div
         onClick={onClick}
-        className="flex items-center gap-4 p-4 dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl cursor-pointer hover:border-lime/30 transition-all"
-        initial={{ opacity: 0, y: 10 }}
+        className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl overflow-hidden cursor-pointer hover:border-lime/30 transition-all group"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Thumbnail */}
-        <div className="relative w-40 h-24 flex-shrink-0 rounded-lg overflow-hidden dark:bg-dark-700 bg-light-300">
+        <div className="relative aspect-video dark:bg-dark-700 bg-light-300">
           <img
             src={video.thumbnail_url || ""}
             alt={video.title}
-            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/160x90/1a1a1a/666?text=Video";
+                "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
             }}
           />
+
+          {/* Source Badge on thumbnail */}
+          <div className="absolute top-2 left-2">
+            <SourceBadge type="youtube" />
+          </div>
+
           {video.duration && (
-            <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-xs text-white">
+            <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 rounded text-xs text-white flex items-center gap-1">
+              <Clock size={12} />
               {video.duration}
             </div>
           )}
+
+          {/* Play overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+            <PlayCircle
+              size={48}
+              className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-1">
+        <div className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-2 group-hover:text-lime transition-colors">
               {video.title}
             </h3>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <SourceBadge type="youtube" />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <AnalysisCountBadge count={analysisTypes.length} />
               <StatusBadge status={status} />
             </div>
           </div>
 
           {/* Analysis badges */}
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {ANALYSIS_TYPES.map((type) => {
               const hasAnalysis = analysisTypes.includes(type.id);
               const Icon = type.icon;
               return (
                 <div
                   key={type.id}
-                  className={`p-1 rounded ${
+                  className={`p-1 rounded transition-all ${
                     hasAnalysis
-                      ? `${type.color} dark:bg-dark-700 bg-light-200`
+                      ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30`
                       : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50"
                   }`}
                   title={type.label}
@@ -238,104 +329,18 @@ const ContentCard: React.FC<ContentCardProps> = ({
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 mt-2 text-xs dark:text-gray-400 text-gray-500">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center justify-between text-xs dark:text-gray-400 text-gray-500">
+            <div className="flex items-center gap-1">
               <Eye size={12} />
-              {formatViews(video.view_count)}
-            </span>
+              <span>{formatViews(video.view_count)}</span>
+            </div>
             <span>{formatRelativeDate(video.published_at)}</span>
           </div>
         </div>
       </motion.div>
     );
-  }
-
-  // Grid view
-  return (
-    <motion.div
-      onClick={onClick}
-      className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl overflow-hidden cursor-pointer hover:border-lime/30 transition-all group"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      {/* Thumbnail */}
-      <div className="relative aspect-video dark:bg-dark-700 bg-light-300">
-        <img
-          src={video.thumbnail_url || ""}
-          alt={video.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
-          }}
-        />
-
-        {/* Source Badge on thumbnail */}
-        <div className="absolute top-2 left-2">
-          <SourceBadge type="youtube" />
-        </div>
-
-        {video.duration && (
-          <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 rounded text-xs text-white flex items-center gap-1">
-            <Clock size={12} />
-            {video.duration}
-          </div>
-        )}
-
-        {/* Play overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
-          <PlayCircle
-            size={48}
-            className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
-          />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="dark:text-white text-gray-900 font-medium text-sm line-clamp-2 group-hover:text-lime transition-colors">
-            {video.title}
-          </h3>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <AnalysisCountBadge count={analysisTypes.length} />
-            <StatusBadge status={status} />
-          </div>
-        </div>
-
-        {/* Analysis badges */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {ANALYSIS_TYPES.map((type) => {
-            const hasAnalysis = analysisTypes.includes(type.id);
-            const Icon = type.icon;
-            return (
-              <div
-                key={type.id}
-                className={`p-1 rounded transition-all ${
-                  hasAnalysis
-                    ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30`
-                    : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50"
-                }`}
-                title={type.label}
-              >
-                <Icon size={14} />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Stats */}
-        <div className="flex items-center justify-between text-xs dark:text-gray-400 text-gray-500">
-          <div className="flex items-center gap-1">
-            <Eye size={12} />
-            <span>{formatViews(video.view_count)}</span>
-          </div>
-          <span>{formatRelativeDate(video.published_at)}</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+  },
+);
 
 // Channels Grid Component
 interface ChannelsGridProps {
@@ -378,6 +383,8 @@ const ChannelsGrid: React.FC<ChannelsGridProps> = ({
               <img
                 src={channel.thumbnail_url}
                 alt={channel.name}
+                loading="lazy"
+                decoding="async"
                 className="w-24 h-24 rounded-full object-cover border-4 dark:border-dark-600 border-light-200"
               />
             ) : (
@@ -602,13 +609,25 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
     fetchData();
   }, [effectiveSearch, channelFilter]);
 
-  // Fetch analyses for all contents
+  // Fetch analyses for all contents - use ref to prevent refetch on every contents change
+  const hasLoadedContentAnalyses = useRef(false);
+  const lastContentCount = useRef(0);
+
   useEffect(() => {
     const fetchAnalyses = async () => {
+      // Only refetch if we have new contents loaded (not on every render)
       if (contents.length === 0) return;
+      if (
+        hasLoadedContentAnalyses.current &&
+        contents.length === lastContentCount.current
+      )
+        return;
 
       try {
         const response = await analysesApi.list({ limit: 1000 });
+        hasLoadedContentAnalyses.current = true;
+        lastContentCount.current = contents.length;
+
         const analysesMap: Record<string, string[]> = {};
         response.analyses.forEach((analysis) => {
           if (!analysesMap[analysis.video_id]) {
@@ -623,7 +642,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
     };
 
     fetchAnalyses();
-  }, [contents]);
+  }, [contents.length]);
 
   // Load more
   const loadMore = useCallback(async () => {
@@ -668,6 +687,23 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
 
     return result;
   }, [contents, statusFilter, sourceFilter, contentAnalyses]);
+
+  // Stable callback for content selection - prevents ContentCard re-renders
+  const handleContentSelect = useCallback((content: Video) => {
+    setSelectedContent(content);
+  }, []);
+
+  // Ref for virtualized list container
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Virtualizer for list view - optimizes rendering of large lists
+  const rowVirtualizer = useVirtualizer({
+    count: filteredContents.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => 100, // Estimated row height in pixels
+    overscan: 5, // Number of items to render outside visible area
+    enabled: viewMode === "list", // Only enable in list mode
+  });
 
   if (isInitialLoading) {
     return (
@@ -718,6 +754,8 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
                   <img
                     src={selectedChannel.thumbnail_url}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="w-5 h-5 rounded-full"
                   />
                 )}
@@ -968,22 +1006,63 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
             </div>
           )}
 
-          {/* Content Grid/List */}
-          {filteredContents.length > 0 && (
-            <div
-              className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}
-            >
+          {/* Grid View (non-virtualized) */}
+          {filteredContents.length > 0 && viewMode === "grid" && (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <AnimatePresence>
                 {filteredContents.map((content) => (
                   <ContentCard
                     key={content.id}
                     video={content}
-                    onClick={() => setSelectedContent(content)}
-                    analysisTypes={contentAnalyses[content.id] || []}
+                    onClick={() => handleContentSelect(content)}
+                    analysisTypes={
+                      contentAnalyses[content.id] || EMPTY_ANALYSIS_TYPES
+                    }
                     viewMode={viewMode}
                   />
                 ))}
               </AnimatePresence>
+            </div>
+          )}
+
+          {/* List View (virtualized for performance) */}
+          {filteredContents.length > 0 && viewMode === "list" && (
+            <div
+              ref={listContainerRef}
+              className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto"
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const content = filteredContents[virtualRow.index];
+                  return (
+                    <div
+                      key={content.id}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <ContentCard
+                        video={content}
+                        onClick={() => handleContentSelect(content)}
+                        analysisTypes={
+                          contentAnalyses[content.id] || EMPTY_ANALYSIS_TYPES
+                        }
+                        viewMode={viewMode}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

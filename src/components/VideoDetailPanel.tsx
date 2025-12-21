@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
@@ -185,9 +185,7 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generatingTypes, setGeneratingTypes] = useState<string[]>([]);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
-    null,
-  );
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(
     null,
   );
@@ -215,17 +213,22 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
     fetchAnalyses();
   }, [video.id]);
 
-  // Auto-polling for generating analyses
+  // Auto-polling for generating analyses - Fixed: use ref + visibility API
   useEffect(() => {
+    // Clear any existing interval FIRST to prevent duplicates
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
     if (generatingTypes.length === 0) return;
 
-    const interval = setInterval(async () => {
+    const pollAnalyses = async () => {
       try {
         const data = await analysesApi.listByVideo(video.id);
         setAnalyses(data);
 
         // Check if any generating types are now complete FOR THE SELECTED LANGUAGE
-        // We track by type_language combo (e.g., "summary_short_en")
         const existingTypeLanguageCombos = data.map(
           (a) => `${a.type}_${a.language || "fr"}`,
         );
@@ -238,23 +241,41 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
       } catch (err) {
         console.error("Error polling analyses:", err);
       }
-    }, 10000); // Poll every 10 seconds
-
-    setPollingInterval(interval);
-
-    return () => {
-      if (interval) clearInterval(interval);
     };
-  }, [generatingTypes.length, video.id, selectedLanguage]);
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+    const startPolling = () => {
+      if (!pollingIntervalRef.current) {
+        pollingIntervalRef.current = setInterval(pollAnalyses, 10000);
       }
     };
-  }, [pollingInterval]);
+
+    const stopPolling = () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        startPolling();
+      }
+    };
+
+    // Start polling only if tab is visible
+    if (!document.hidden) {
+      startPolling();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [generatingTypes.length, video.id, selectedLanguage]);
 
   // Track existing analyses by type AND language (e.g., "summary_short_fr", "summary_short_en")
   const existingTypeLanguageCombos = analyses.map(
@@ -679,6 +700,8 @@ export const VideoDetailPanel: React.FC<VideoDetailPanelProps> = ({
                 <img
                   src={video.thumbnail_url || ""}
                   alt={video.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =

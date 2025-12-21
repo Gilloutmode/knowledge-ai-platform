@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PlayCircle,
@@ -43,6 +44,9 @@ import {
 } from "../components/AdvancedFilters";
 
 const VIDEOS_PER_PAGE = 20;
+
+// Stable empty array to prevent re-renders when video has no analyses
+const EMPTY_ANALYSIS_TYPES: string[] = [];
 
 type ViewMode = "grid" | "list";
 type StatusFilter = "all" | "pending" | "processing" | "completed" | "failed";
@@ -148,279 +152,280 @@ function formatRelativeDate(dateString: string): string {
   return `Il y a ${years} an${years > 1 ? "s" : ""}`;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({
-  video,
-  channelName,
-  onClick,
-  analysisTypes = [],
-}) => {
-  const status = video.is_analyzed ? "completed" : "pending";
-  const isTodayVideo = isPublishedToday(video.published_at);
-  const [isHovered, setIsHovered] = useState(false);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
+const VideoCard: React.FC<VideoCardProps> = React.memo(
+  ({ video, channelName, onClick, analysisTypes = [] }) => {
+    const status = video.is_analyzed ? "completed" : "pending";
+    const isTodayVideo = isPublishedToday(video.published_at);
+    const [isHovered, setIsHovered] = useState(false);
+    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+    const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!cardRef.current) return;
 
-    const card = cardRef.current;
-    const rect = card.getBoundingClientRect();
-    const cardCenterX = rect.left + rect.width / 2;
-    const cardCenterY = rect.top + rect.height / 2;
-    const mouseX = e.clientX - cardCenterX;
-    const mouseY = e.clientY - cardCenterY;
+      const card = cardRef.current;
+      const rect = card.getBoundingClientRect();
+      const cardCenterX = rect.left + rect.width / 2;
+      const cardCenterY = rect.top + rect.height / 2;
+      const mouseX = e.clientX - cardCenterX;
+      const mouseY = e.clientY - cardCenterY;
 
-    const rotationY = (mouseX / (rect.width / 2)) * 4;
-    const rotationX = -(mouseY / (rect.height / 2)) * 4;
+      const rotationY = (mouseX / (rect.width / 2)) * 4;
+      const rotationX = -(mouseY / (rect.height / 2)) * 4;
 
-    setRotation({ x: rotationX, y: rotationY });
-  };
+      setRotation({ x: rotationX, y: rotationY });
+    };
 
-  const resetRotation = () => {
-    setIsHovered(false);
-    setRotation({ x: 0, y: 0 });
-  };
+    const resetRotation = () => {
+      setIsHovered(false);
+      setRotation({ x: 0, y: 0 });
+    };
 
-  return (
-    <motion.div
-      ref={cardRef}
-      onClick={onClick}
-      className="relative w-full cursor-pointer group"
-      style={{
-        transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
-        transition: isHovered
-          ? "none"
-          : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={resetRotation}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Animated gradient border */}
-      <div
-        className={`absolute -inset-0.5 rounded-xl opacity-0 blur-sm transition-opacity duration-500 ${
-          isTodayVideo
-            ? "bg-gradient-to-r from-lime via-cyan to-lime opacity-75 group-hover:opacity-100 animate-pulse"
-            : "bg-gradient-to-r from-lime/50 via-cyan/50 to-lime/50 group-hover:opacity-100"
-        }`}
-      ></div>
-
-      {/* Main card */}
-      <div
-        className={`relative dark:bg-dark-800/90 bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden border shadow-2xl ${
-          isTodayVideo
-            ? "border-lime/30"
-            : "dark:border-dark-border/50 border-light-border/50"
-        }`}
+    return (
+      <motion.div
+        ref={cardRef}
+        onClick={onClick}
+        className="relative w-full cursor-pointer group"
+        style={{
+          transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
+          transition: isHovered
+            ? "none"
+            : "transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={resetRotation}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Glassmorphism overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br dark:from-dark-700/40 dark:via-dark-800/40 dark:to-dark-900/40 from-light-200/40 via-white/40 to-light-100/40 backdrop-blur-sm pointer-events-none"></div>
+        {/* Animated gradient border */}
+        <div
+          className={`absolute -inset-0.5 rounded-xl opacity-0 blur-sm transition-opacity duration-500 ${
+            isTodayVideo
+              ? "bg-gradient-to-r from-lime via-cyan to-lime opacity-75 group-hover:opacity-100 animate-pulse"
+              : "bg-gradient-to-r from-lime/50 via-cyan/50 to-lime/50 group-hover:opacity-100"
+          }`}
+        ></div>
 
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
-          <div className="absolute inset-0 bg-gradient-to-br from-lime/20 via-cyan/20 to-lime/20 animate-pulse"></div>
-        </div>
+        {/* Main card */}
+        <div
+          className={`relative dark:bg-dark-800/90 bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden border shadow-2xl ${
+            isTodayVideo
+              ? "border-lime/30"
+              : "dark:border-dark-border/50 border-light-border/50"
+          }`}
+        >
+          {/* Glassmorphism overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br dark:from-dark-700/40 dark:via-dark-800/40 dark:to-dark-900/40 from-light-200/40 via-white/40 to-light-100/40 backdrop-blur-sm pointer-events-none"></div>
 
-        {/* Thumbnail section */}
-        <div className="relative aspect-video overflow-hidden dark:bg-dark-700 bg-light-300">
-          <motion.img
-            src={video.thumbnail_url || ""}
-            alt={video.title}
-            className="w-full h-full object-cover"
-            animate={{ scale: isHovered ? 1.1 : 1 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
-            }}
-          />
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-lime/20 via-cyan/20 to-lime/20 animate-pulse"></div>
+          </div>
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/50 to-transparent opacity-60"></div>
+          {/* Thumbnail section */}
+          <div className="relative aspect-video overflow-hidden dark:bg-dark-700 bg-light-300">
+            <motion.img
+              src={video.thumbnail_url || ""}
+              alt={video.title}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+              animate={{ scale: isHovered ? 1.1 : 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://via.placeholder.com/320x180/1a1a1a/666?text=Video";
+              }}
+            />
 
-          {/* Animated play button */}
-          <AnimatePresence>
-            {isHovered && (
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/50 to-transparent opacity-60"></div>
+
+            {/* Animated play button */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-lime/20 rounded-full blur-xl animate-pulse"></div>
+                    <motion.div
+                      className="relative bg-lime/90 backdrop-blur-sm rounded-full p-4 shadow-2xl"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <PlayCircle
+                        size={32}
+                        className="text-dark-900 fill-dark-900"
+                      />
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Duration badge */}
+            {video.duration && (
+              <div className="absolute bottom-2 right-2 bg-dark-900/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-dark-700/50">
+                <div className="flex items-center gap-1">
+                  <Clock size={12} className="dark:text-lime text-lime-dark" />
+                  <span className="text-xs font-medium text-white">
+                    {video.duration}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* New today badge */}
+            {isTodayVideo && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0 flex items-center justify-center"
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="absolute top-2 left-2"
               >
                 <div className="relative">
-                  <div className="absolute inset-0 bg-lime/20 rounded-full blur-xl animate-pulse"></div>
-                  <motion.div
-                    className="relative bg-lime/90 backdrop-blur-sm rounded-full p-4 shadow-2xl"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <PlayCircle
-                      size={32}
-                      className="text-dark-900 fill-dark-900"
-                    />
-                  </motion.div>
+                  <div className="absolute inset-0 bg-cyan/30 rounded-full blur-md animate-pulse"></div>
+                  <div className="relative bg-gradient-to-r from-cyan to-lime px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+                    <span className="text-xs font-bold text-dark-900">
+                      🆕 Aujourd'hui
+                    </span>
+                  </div>
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
-
-          {/* Duration badge */}
-          {video.duration && (
-            <div className="absolute bottom-2 right-2 bg-dark-900/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-dark-700/50">
-              <div className="flex items-center gap-1">
-                <Clock size={12} className="dark:text-lime text-lime-dark" />
-                <span className="text-xs font-medium text-white">
-                  {video.duration}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* New today badge */}
-          {isTodayVideo && (
-            <motion.div
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="absolute top-2 left-2"
-            >
-              <div className="relative">
-                <div className="absolute inset-0 bg-cyan/30 rounded-full blur-md animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-cyan to-lime px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
-                  <span className="text-xs font-bold text-dark-900">
-                    🆕 Aujourd'hui
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Content section */}
-        <div className="relative p-4 space-y-3">
-          {/* Title and Status */}
-          <div className="flex items-start justify-between gap-2">
-            <motion.h3
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="dark:text-white text-gray-900 font-medium text-sm line-clamp-2 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors duration-300"
-            >
-              {video.title}
-            </motion.h3>
-            <StatusBadge status={status} />
           </div>
 
-          {channelName && (
-            <p className="dark:text-gray-500 text-gray-400 text-xs">
-              {channelName}
-            </p>
-          )}
+          {/* Content section */}
+          <div className="relative p-4 space-y-3">
+            {/* Title and Status */}
+            <div className="flex items-start justify-between gap-2">
+              <motion.h3
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="dark:text-white text-gray-900 font-medium text-sm line-clamp-2 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors duration-300"
+              >
+                {video.title}
+              </motion.h3>
+              <StatusBadge status={status} />
+            </div>
 
-          {/* Animated Analysis Badges */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center gap-1.5 flex-wrap"
-          >
-            {ANALYSIS_TYPES.map((type, index) => {
-              const hasAnalysis = analysisTypes.includes(type.id);
-              const Icon = type.icon;
-              return (
-                <motion.div
-                  key={type.id}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                  className={`p-1 rounded transition-all duration-300 ${
-                    hasAnalysis
-                      ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30 hover:scale-110`
-                      : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50 dark:hover:bg-dark-700 hover:bg-light-300"
-                  }`}
-                  title={
-                    hasAnalysis ? `${type.id} généré` : `${type.id} non généré`
-                  }
-                  whileHover={{ scale: 1.2 }}
-                >
-                  <Icon size={14} />
-                </motion.div>
-              );
-            })}
-          </motion.div>
+            {channelName && (
+              <p className="dark:text-gray-500 text-gray-400 text-xs">
+                {channelName}
+              </p>
+            )}
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center justify-between text-xs dark:text-gray-400 text-gray-500"
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 dark:group-hover:text-cyan group-hover:text-cyan-dark transition-colors duration-300">
-                <Eye size={12} />
-                <span className="font-medium">
-                  {formatViews(video.view_count)}
-                </span>
-              </div>
-              {video.like_count > 0 && (
-                <div className="flex items-center gap-1 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors duration-300">
+            {/* Animated Analysis Badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-1.5 flex-wrap"
+            >
+              {ANALYSIS_TYPES.map((type, index) => {
+                const hasAnalysis = analysisTypes.includes(type.id);
+                const Icon = type.icon;
+                return (
+                  <motion.div
+                    key={type.id}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + index * 0.05 }}
+                    className={`p-1 rounded transition-all duration-300 ${
+                      hasAnalysis
+                        ? `${type.color} dark:bg-dark-700 bg-light-200 border border-current/30 hover:scale-110`
+                        : "dark:text-gray-600 text-gray-400 dark:bg-dark-700/50 bg-light-300/50 dark:hover:bg-dark-700 hover:bg-light-300"
+                    }`}
+                    title={
+                      hasAnalysis
+                        ? `${type.id} généré`
+                        : `${type.id} non généré`
+                    }
+                    whileHover={{ scale: 1.2 }}
+                  >
+                    <Icon size={14} />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-between text-xs dark:text-gray-400 text-gray-500"
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 dark:group-hover:text-cyan group-hover:text-cyan-dark transition-colors duration-300">
+                  <Eye size={12} />
                   <span className="font-medium">
-                    👍 {formatViews(video.like_count)}
+                    {formatViews(video.view_count)}
                   </span>
                 </div>
-              )}
-            </div>
-            <span className="dark:group-hover:text-white group-hover:text-gray-900 transition-colors duration-300">
-              {formatRelativeDate(video.published_at)}
-            </span>
-          </motion.div>
+                {video.like_count > 0 && (
+                  <div className="flex items-center gap-1 dark:group-hover:text-lime group-hover:text-lime-dark transition-colors duration-300">
+                    <span className="font-medium">
+                      👍 {formatViews(video.like_count)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <span className="dark:group-hover:text-white group-hover:text-gray-900 transition-colors duration-300">
+                {formatRelativeDate(video.published_at)}
+              </span>
+            </motion.div>
 
-          {/* Hover glow effect */}
-          <motion.div className="absolute inset-0 bg-gradient-to-t from-lime/5 via-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-b-xl" />
+            {/* Hover glow effect */}
+            <motion.div className="absolute inset-0 bg-gradient-to-t from-lime/5 via-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-b-xl" />
+          </div>
         </div>
-      </div>
 
-      {/* Floating particles effect */}
-      <AnimatePresence>
-        {isHovered && (
-          <>
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-lime rounded-full pointer-events-none"
-                initial={{
-                  x: 0,
-                  y: 0,
-                  opacity: 0,
-                }}
-                animate={{
-                  x: (Math.random() - 0.5) * 100,
-                  y: (Math.random() - 0.5) * 100,
-                  opacity: [0, 1, 0],
-                }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: 1.5,
-                  delay: i * 0.1,
-                  repeat: Infinity,
-                }}
-                style={{
-                  left: "50%",
-                  top: "50%",
-                }}
-              />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
+        {/* Floating particles effect */}
+        <AnimatePresence>
+          {isHovered && (
+            <>
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-lime rounded-full pointer-events-none"
+                  initial={{
+                    x: 0,
+                    y: 0,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    x: (Math.random() - 0.5) * 100,
+                    y: (Math.random() - 0.5) * 100,
+                    opacity: [0, 1, 0],
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{
+                    duration: 1.5,
+                    delay: i * 0.1,
+                    repeat: Infinity,
+                  }}
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                  }}
+                />
+              ))}
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  },
+);
 
 export const VideosPage: React.FC<VideosPageProps> = ({
   searchQuery = "",
@@ -574,12 +579,18 @@ export const VideosPage: React.FC<VideosPageProps> = ({
     };
   }, [channelId, debouncedSearch]);
 
-  // Fetch analyses for all videos
+  // Fetch analyses for all videos - use ref to prevent refetch on every videos change
+  const hasLoadedAnalyses = useRef(false);
+  const lastVideoCount = useRef(0);
+
   useEffect(() => {
     const abortController = new AbortController();
 
     const fetchAnalyses = async () => {
+      // Only refetch if we have new videos loaded (not on every render)
       if (videos.length === 0) return;
+      if (hasLoadedAnalyses.current && videos.length === lastVideoCount.current)
+        return;
 
       try {
         // Fetch all analyses
@@ -589,6 +600,9 @@ export const VideosPage: React.FC<VideosPageProps> = ({
         });
 
         if (!abortController.signal.aborted) {
+          hasLoadedAnalyses.current = true;
+          lastVideoCount.current = videos.length;
+
           // Group analyses by video_id
           const analysesMap: Record<string, string[]> = {};
           response.analyses.forEach((analysis) => {
@@ -612,19 +626,18 @@ export const VideosPage: React.FC<VideosPageProps> = ({
     return () => {
       abortController.abort();
     };
-  }, [videos]);
+  }, [videos.length]);
 
-  // Periodic auto-refresh every 10 minutes
+  // Periodic auto-refresh every 10 minutes (only when tab is visible)
   useEffect(() => {
     if (!channelId) return;
 
     const POLLING_INTERVAL = 10 * 60 * 1000; // 10 minutes
+    let refreshInterval: NodeJS.Timeout | null = null;
 
-    const refreshInterval = setInterval(async () => {
+    const doRefresh = async () => {
       try {
         await channelsApi.refreshVideos(channelId);
-
-        // Reload videos silently
         const response = await videosApi.listByChannel(channelId, {
           limit: VIDEOS_PER_PAGE,
           offset: 0,
@@ -635,11 +648,39 @@ export const VideosPage: React.FC<VideosPageProps> = ({
       } catch (err) {
         console.error("Background auto-refresh failed:", err);
       }
-    }, POLLING_INTERVAL);
+    };
 
-    // Cleanup on unmount or channelId change
+    const startPolling = () => {
+      if (!refreshInterval) {
+        refreshInterval = setInterval(doRefresh, POLLING_INTERVAL);
+      }
+    };
+
+    const stopPolling = () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        startPolling();
+      }
+    };
+
+    // Start polling only if tab is visible
+    if (!document.hidden) {
+      startPolling();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      clearInterval(refreshInterval);
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [channelId]);
 
@@ -728,6 +769,23 @@ export const VideosPage: React.FC<VideosPageProps> = ({
     return result;
   }, [videos, statusFilter, filters.dateRange, filters.sortBy]);
 
+  // Stable callback for video selection - prevents VideoCard re-renders
+  const handleVideoSelect = useCallback((video: Video) => {
+    setSelectedVideo(video);
+  }, []);
+
+  // Ref for virtualized list container
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Virtualizer for list view - optimizes rendering of large lists
+  const rowVirtualizer = useVirtualizer({
+    count: filteredVideos.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => 100, // Estimated row height in pixels
+    overscan: 5, // Number of items to render outside visible area
+    enabled: viewMode === "list", // Only enable in list mode
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -761,6 +819,8 @@ export const VideosPage: React.FC<VideosPageProps> = ({
           <img
             src={channel.thumbnail_url || ""}
             alt={channel.name}
+            loading="lazy"
+            decoding="async"
             className="w-8 h-8 rounded-full"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
@@ -883,23 +943,59 @@ export const VideosPage: React.FC<VideosPageProps> = ({
         </div>
       )}
 
-      {/* Grid */}
-      {filteredVideos.length > 0 && (
-        <div
-          className={`
-          grid gap-4
-          ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}
-        `}
-        >
+      {/* Grid View (non-virtualized) */}
+      {filteredVideos.length > 0 && viewMode === "grid" && (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredVideos.map((video) => (
             <VideoCard
               key={video.id}
               video={video}
               channelName={channel?.name}
-              onClick={() => setSelectedVideo(video)}
-              analysisTypes={videoAnalyses[video.id] || []}
+              onClick={() => handleVideoSelect(video)}
+              analysisTypes={videoAnalyses[video.id] || EMPTY_ANALYSIS_TYPES}
             />
           ))}
+        </div>
+      )}
+
+      {/* List View (virtualized for performance) */}
+      {filteredVideos.length > 0 && viewMode === "list" && (
+        <div
+          ref={listContainerRef}
+          className="h-[calc(100vh-400px)] min-h-[400px] overflow-auto"
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const video = filteredVideos[virtualRow.index];
+              return (
+                <div
+                  key={video.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <VideoCard
+                    video={video}
+                    channelName={channel?.name}
+                    onClick={() => handleVideoSelect(video)}
+                    analysisTypes={
+                      videoAnalyses[video.id] || EMPTY_ANALYSIS_TYPES
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

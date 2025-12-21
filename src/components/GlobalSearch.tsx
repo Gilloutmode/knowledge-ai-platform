@@ -179,6 +179,8 @@ export const GlobalSearch: React.FC = () => {
                         <img
                           src={channel.thumbnail_url}
                           alt={channel.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -232,6 +234,8 @@ export const GlobalSearch: React.FC = () => {
                         <img
                           src={video.thumbnail_url}
                           alt={video.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       ) : (

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase, notificationsApi, Database } from "../lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -124,6 +124,10 @@ export function useRealtimeNotifications(): UseRealtimeNotificationsReturn {
 export function useRealtimeAnalyses(
   onNewAnalysis?: (analysis: unknown) => void,
 ) {
+  // Use ref to avoid subscription churn when callback changes
+  const callbackRef = useRef(onNewAnalysis);
+  callbackRef.current = onNewAnalysis;
+
   useEffect(() => {
     const channel = supabase
       .channel("analyses-changes")
@@ -135,9 +139,7 @@ export function useRealtimeAnalyses(
           table: "analyses",
         },
         (payload) => {
-          if (onNewAnalysis) {
-            onNewAnalysis(payload.new);
-          }
+          callbackRef.current?.(payload.new);
         },
       )
       .subscribe();
@@ -145,7 +147,7 @@ export function useRealtimeAnalyses(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [onNewAnalysis]);
+  }, []); // Empty deps - subscription only created once
 }
 
 // Browser notification helper

@@ -172,6 +172,8 @@ const RecentContentCard: React.FC<RecentContentCardProps> = ({
           <img
             src={thumbnail}
             alt={title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         </div>
@@ -310,8 +312,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       const [channelsData, videosResponse, analysesResponse] =
         await Promise.all([
           channelsApi.list(signal),
-          videosApi.list({ limit: 1000, signal }),
-          analysesApi.list({ limit: 1000, signal }),
+          videosApi.list({ limit: 100, signal }), // Reduced from 1000 - dashboard only shows 5 recent
+          analysesApi.list({ limit: 100, signal }), // Reduced from 1000 - dashboard only shows 5 recent
         ]);
 
       if (!signal?.aborted) {
@@ -504,6 +506,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     )
     .slice(0, 5);
 
+  // Map for O(1) video lookup by ID - prevents O(n²) in render loop
+  const videoMap = useMemo(
+    () => new Map(videos.map((v) => [v.id, v])),
+    [videos],
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -662,6 +670,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <img
                     src={video.thumbnail_url || ""}
                     alt={video.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
@@ -796,7 +806,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="space-y-3">
             {recentAnalyses.length > 0 ? (
               recentAnalyses.map((analysis) => {
-                const video = videos.find((v) => v.id === analysis.video_id);
+                const video = videoMap.get(analysis.video_id);
                 return (
                   <motion.div
                     key={analysis.id}
