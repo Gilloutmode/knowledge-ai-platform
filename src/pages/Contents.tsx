@@ -30,6 +30,7 @@ import {
   PlayCircle,
   Search,
   X,
+  RefreshCw,
 } from "lucide-react";
 import {
   videosApi,
@@ -342,6 +343,100 @@ const ContentCard: React.FC<ContentCardProps> = React.memo(
   },
 );
 
+// Channel Card Item with proper image error handling
+interface ChannelCardItemProps {
+  channel: Channel;
+  onViewVideos: (channelId: string) => void;
+}
+
+const ChannelCardItem: React.FC<ChannelCardItemProps> = ({
+  channel,
+  onViewVideos,
+}) => {
+  const [imageStatus, setImageStatus] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
+
+  // Reset image status when thumbnail URL changes
+  useEffect(() => {
+    if (channel.thumbnail_url) {
+      setImageStatus("loading");
+    }
+  }, [channel.thumbnail_url]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl overflow-hidden group hover:border-lime/30 transition-all"
+    >
+      {/* Thumbnail */}
+      <div className="relative aspect-video dark:bg-dark-700 bg-light-300 flex items-center justify-center">
+        {/* Always render the fallback icon as base layer */}
+        <div
+          className={`w-24 h-24 rounded-full dark:bg-dark-600 bg-light-200 flex items-center justify-center transition-opacity duration-300 ${
+            imageStatus === "loaded" ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <Youtube size={32} className="dark:text-gray-500 text-gray-400" />
+        </div>
+        {/* Image layer on top */}
+        {channel.thumbnail_url && (
+          <img
+            src={channel.thumbnail_url}
+            alt={channel.name}
+            className={`w-24 h-24 rounded-full object-cover border-4 dark:border-dark-600 border-light-200 absolute transition-opacity duration-300 ${
+              imageStatus === "loaded" ? "opacity-100" : "opacity-0"
+            }`}
+            referrerPolicy="no-referrer"
+            onLoad={() => setImageStatus("loaded")}
+            onError={() => {
+              console.warn(
+                `[Thumbnail Error] ${channel.name}: ${channel.thumbnail_url}`,
+              );
+              setImageStatus("error");
+            }}
+          />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-3">
+        <div className="text-center">
+          <h3 className="dark:text-white text-gray-900 font-semibold text-sm line-clamp-1 group-hover:text-lime transition-colors">
+            {channel.name}
+          </h3>
+          {/* Subscriber count */}
+          <div className="flex items-center justify-center gap-1 text-xs dark:text-gray-400 text-gray-500 mt-1">
+            <Users size={12} />
+            <span>
+              {formatSubscribers(channel.subscriber_count)} abonnés
+            </span>
+          </div>
+          {/* Video count */}
+          <p className="text-xs dark:text-gray-500 text-gray-400 mt-0.5">
+            {channel.video_count?.toLocaleString() || 0} vidéos
+          </p>
+          {/* Niche badge */}
+          {channel.niche && (
+            <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/10 text-red-400 text-xs font-medium rounded-full">
+              {channel.niche}
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={() => onViewVideos(channel.id)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium dark:bg-dark-700 bg-light-200 dark:hover:bg-lime/20 hover:bg-lime/20 dark:text-white text-gray-900 hover:text-lime rounded-lg transition-all"
+        >
+          Voir vidéos
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 // Channels Grid Component
 interface ChannelsGridProps {
   channels: Channel[];
@@ -371,66 +466,11 @@ const ChannelsGrid: React.FC<ChannelsGridProps> = ({
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {channels.map((channel) => (
-        <motion.div
+        <ChannelCardItem
           key={channel.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="dark:bg-dark-800 bg-white border dark:border-dark-border border-light-border rounded-xl overflow-hidden group hover:border-lime/30 transition-all"
-        >
-          {/* Thumbnail */}
-          <div className="relative aspect-video dark:bg-dark-700 bg-light-300 flex items-center justify-center">
-            {channel.thumbnail_url ? (
-              <img
-                src={channel.thumbnail_url}
-                alt={channel.name}
-                loading="lazy"
-                decoding="async"
-                className="w-24 h-24 rounded-full object-cover border-4 dark:border-dark-600 border-light-200"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full dark:bg-dark-600 bg-light-200 flex items-center justify-center">
-                <Youtube
-                  size={32}
-                  className="dark:text-gray-500 text-gray-400"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="p-4 space-y-3">
-            <div className="text-center">
-              <h3 className="dark:text-white text-gray-900 font-semibold text-sm line-clamp-1 group-hover:text-lime transition-colors">
-                {channel.name}
-              </h3>
-              {/* Subscriber count */}
-              <div className="flex items-center justify-center gap-1 text-xs dark:text-gray-400 text-gray-500 mt-1">
-                <Users size={12} />
-                <span>
-                  {formatSubscribers(channel.subscriber_count)} abonnés
-                </span>
-              </div>
-              {/* Video count */}
-              <p className="text-xs dark:text-gray-500 text-gray-400 mt-0.5">
-                {channel.video_count?.toLocaleString() || 0} vidéos
-              </p>
-              {/* Niche badge */}
-              {channel.niche && (
-                <span className="inline-block mt-2 px-2 py-0.5 bg-red-500/10 text-red-400 text-xs font-medium rounded-full">
-                  {channel.niche}
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={() => onViewVideos(channel.id)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium dark:bg-dark-700 bg-light-200 dark:hover:bg-lime/20 hover:bg-lime/20 dark:text-white text-gray-900 hover:text-lime rounded-lg transition-all"
-            >
-              Voir vidéos
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        </motion.div>
+          channel={channel}
+          onViewVideos={onViewVideos}
+        />
       ))}
     </div>
   );
@@ -453,6 +493,7 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalContents, setTotalContents] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -693,6 +734,27 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
     setSelectedContent(content);
   }, []);
 
+  // Handle manual channel refresh
+  const handleChannelRefresh = useCallback(async () => {
+    if (!channelFilter || channelFilter === "all" || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await channelsApi.refreshVideos(channelFilter);
+      // Reload videos after refresh
+      const response = await videosApi.list({
+        limit: CONTENTS_PER_PAGE,
+        channelId: channelFilter,
+      });
+      setContents(response.videos);
+      setTotalContents(response.total);
+      setHasMore(response.hasMore);
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [channelFilter, isRefreshing]);
+
   // Ref for virtualized list container
   const listContainerRef = useRef<HTMLDivElement>(null);
 
@@ -765,6 +827,20 @@ export const ContentsPage: React.FC<ContentsPageProps> = ({
                   {filteredContents.length !== 1 ? "s" : ""})
                 </span>
               </span>
+              <button
+                onClick={handleChannelRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm dark:bg-dark-700 bg-light-200
+                           dark:hover:bg-lime/20 hover:bg-lime/20 rounded-lg transition-all
+                           disabled:opacity-50 disabled:cursor-not-allowed ml-2"
+                title="Actualiser les vidéos de cette chaîne"
+              >
+                <RefreshCw
+                  size={14}
+                  className={isRefreshing ? "animate-spin" : ""}
+                />
+                {isRefreshing ? "Actualisation..." : "Actualiser"}
+              </button>
             </>
           )}
           {!selectedChannel && (

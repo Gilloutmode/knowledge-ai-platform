@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -24,10 +24,11 @@ import {
   analysesApi,
   Channel,
   Video,
-  Analysis,
+  AnalysisWithVideo,
 } from "../services/api";
 import { VideoDetailPanel } from "../components/VideoDetailPanel";
 import { SourceBadge } from "../components/ui/SourceBadge";
+import { AnalysisDetailModal } from "../components/AnalysisDetailModal";
 
 // Extended Video type with Supabase channel relation
 interface VideoWithChannel extends Video {
@@ -296,13 +297,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [channels, setChannels] = useState<Channel[]>([]);
   const [videos, setVideos] = useState<VideoWithChannel[]>([]);
   const [totalVideos, setTotalVideos] = useState(0);
-  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [analyses, setAnalyses] = useState<AnalysisWithVideo[]>([]);
   const [totalAnalyses, setTotalAnalyses] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoWithChannel | null>(
     null,
   );
+  const [selectedAnalysis, setSelectedAnalysis] =
+    useState<AnalysisWithVideo | null>(null);
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("week");
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
@@ -359,6 +362,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
       abortController?.abort();
     };
   }, []);
+
+  // Auto-sync videos from YouTube on Dashboard load (runs once per session)
+  const hasRefreshedVideos = useRef(false);
+  useEffect(() => {
+    if (hasRefreshedVideos.current || channels.length === 0 || isLoading)
+      return;
+
+    const refreshAllChannels = async () => {
+      hasRefreshedVideos.current = true;
+
+      // Refresh each channel sequentially to respect rate limits
+      for (const channel of channels) {
+        try {
+          await channelsApi.refreshVideos(channel.id);
+        } catch (err) {
+          console.warn(`[Dashboard] Failed to refresh ${channel.name}:`, err);
+        }
+      }
+
+      // Reload videos from database after sync
+      try {
+        const videosResponse = await videosApi.list({ limit: 100 });
+        setVideos(videosResponse.videos);
+        setTotalVideos(videosResponse.total);
+      } catch (err) {
+        console.error("[Dashboard] Failed to reload videos:", err);
+      }
+    };
+
+    refreshAllChannels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels.length, isLoading]); // Intentionally use channels.length to avoid re-running on array reference change
 
   // Calculate stats
   const now = new Date();
@@ -490,26 +525,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )
     : videos;
 
-  // Recent videos sorted by date
-  const recentVideos = [...filteredVideos]
-    .sort(
-      (a, b) =>
-        new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
-    )
-    .slice(0, 5);
+  // Recent videos sorted by date (no limit - scrollable)
+  const recentVideos = [...filteredVideos].sort(
+    (a, b) =>
+      new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
+  );
 
-  // Recent analyses sorted by date
-  const recentAnalyses = [...analyses]
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
-    .slice(0, 5);
-
-  // Map for O(1) video lookup by ID - prevents O(n²) in render loop
-  const videoMap = useMemo(
-    () => new Map(videos.map((v) => [v.id, v])),
-    [videos],
+  // Recent analyses sorted by date (no limit - scrollable)
+  const recentAnalyses = [...analyses].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   if (isLoading) {
@@ -748,7 +773,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Contents */}
-        <div className="dark:bg-dark-800/50 bg-white border dark:border-dark-border border-light-border rounded-2xl p-6">
+        <div className="dark:bg-dark-800/50 bg-white border dark:border-dark-border border-light-border rounded-2xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold dark:text-white text-gray-900">
               Nouveaux contenus
@@ -761,7 +786,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <ArrowRight size={14} />
             </button>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-dark-border [&::-webkit-scrollbar-thumb]:rounded-full">
             {recentVideos.length > 0 ? (
               recentVideos.map((video) => (
                 <RecentContentCard
@@ -790,7 +815,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Recent Analyses */}
-        <div className="dark:bg-dark-800/50 bg-white border dark:border-dark-border border-light-border rounded-2xl p-6">
+        <div className="dark:bg-dark-800/50 bg-white border dark:border-dark-border border-light-border rounded-2xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold dark:text-white text-gray-900">
               Analyses récentes
@@ -803,31 +828,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <ArrowRight size={14} />
             </button>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-dark-border [&::-webkit-scrollbar-thumb]:rounded-full">
             {recentAnalyses.length > 0 ? (
-              recentAnalyses.map((analysis) => {
-                const video = videoMap.get(analysis.video_id);
-                return (
-                  <motion.div
-                    key={analysis.id}
-                    className="flex items-center gap-3 p-3 dark:bg-dark-700/50 bg-light-200 rounded-xl"
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <SourceBadge type="youtube" size="sm" showLabel={false} />
-                      <AnalysisBadge type={analysis.type} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="dark:text-white text-gray-900 text-sm line-clamp-1">
-                        {video?.title || "Vidéo"}
-                      </p>
-                      <p className="dark:text-gray-500 text-gray-400 text-xs">
-                        {formatRelativeTime(analysis.created_at)}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })
+              recentAnalyses.map((analysis) => (
+                <motion.button
+                  key={analysis.id}
+                  onClick={() => setSelectedAnalysis(analysis)}
+                  className="flex items-center gap-3 p-3 dark:bg-dark-700/50 bg-light-200 rounded-xl w-full text-left cursor-pointer dark:hover:bg-dark-600/50 hover:bg-light-300 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="flex items-center gap-2">
+                    <SourceBadge type="youtube" size="sm" showLabel={false} />
+                    <AnalysisBadge type={analysis.type} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="dark:text-white text-gray-900 text-sm line-clamp-1">
+                      {analysis.videos?.title || "Vidéo"}
+                    </p>
+                    <p className="dark:text-gray-500 text-gray-400 text-xs">
+                      {formatRelativeTime(analysis.created_at)}
+                    </p>
+                  </div>
+                </motion.button>
+              ))
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Sparkles size={32} className="mx-auto mb-2 opacity-50" />
@@ -908,6 +931,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         )}
       </AnimatePresence>
+
+      {/* Analysis Detail Modal */}
+      {selectedAnalysis && (
+        <AnalysisDetailModal
+          analysis={selectedAnalysis}
+          onClose={() => setSelectedAnalysis(null)}
+        />
+      )}
     </div>
   );
 };

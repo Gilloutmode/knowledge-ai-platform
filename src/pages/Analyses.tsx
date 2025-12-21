@@ -5,8 +5,8 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import ReactMarkdown from "react-markdown";
 import {
   FileText,
   Zap,
@@ -15,14 +15,9 @@ import {
   CheckSquare,
   Layers,
   Calendar,
-  Download,
   ChevronRight,
   ChevronDown,
   Loader2,
-  X,
-  ExternalLink,
-  Clock,
-  Eye,
   List,
   PlayCircle,
   Radio,
@@ -32,6 +27,7 @@ import {
 } from "lucide-react";
 import { analysesApi, AnalysisWithVideo } from "../services/api";
 import { SourceBadge } from "../components/ui/SourceBadge";
+import { AnalysisDetailModal } from "../components/AnalysisDetailModal";
 import {
   AdvancedFilters,
   FilterState,
@@ -306,227 +302,6 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onClick }) => {
               {formatDate(analysis.created_at)}
             </span>
             <span>{wordCount.toLocaleString()} mots</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface AnalysisDetailModalProps {
-  analysis: AnalysisWithVideo;
-  onClose: () => void;
-}
-
-const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
-  analysis,
-  onClose,
-}) => {
-  const typeConfig = getTypeConfig(analysis.type);
-  const videoTitle = analysis.videos?.title || "Vidéo inconnue";
-  const channelName = analysis.videos?.channels?.name || "Chaîne inconnue";
-  const thumbnail = analysis.videos?.thumbnail_url || "";
-  const youtubeUrl = analysis.videos?.youtube_video_id
-    ? `https://www.youtube.com/watch?v=${analysis.videos.youtube_video_id}`
-    : null;
-  const wordCount = countWords(analysis.content);
-  const readTime = Math.ceil(wordCount / 200); // ~200 mots/min
-
-  const handleDownload = () => {
-    const blob = new Blob([analysis.content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${typeConfig.label} - ${videoTitle.substring(0, 50)}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] dark:bg-dark-900 bg-white border dark:border-dark-border border-light-border rounded-2xl overflow-hidden shadow-2xl shadow-lime/5 animate-slide-up">
-        {/* Header with gradient */}
-        <div className="sticky top-0 z-10 bg-gradient-to-b dark:from-dark-900 dark:via-dark-900 dark:to-dark-900/95 from-white via-white to-white/95 backdrop-blur-sm border-b dark:border-dark-border border-light-border">
-          {/* Video banner */}
-          <div className="relative h-24 overflow-hidden">
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
-              style={{ backgroundImage: `url(${thumbnail})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-dark-900" />
-            <div className="absolute top-4 right-4 flex items-center gap-2">
-              {youtubeUrl && (
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 dark:bg-dark-800/80 bg-light-200/80 dark:hover:bg-dark-700 hover:bg-light-300 rounded-lg transition-colors backdrop-blur-sm"
-                  title="Voir sur YouTube"
-                >
-                  <ExternalLink
-                    size={16}
-                    className="dark:text-gray-300 text-gray-600"
-                  />
-                </a>
-              )}
-              <button
-                onClick={handleDownload}
-                className="p-2 dark:bg-dark-800/80 bg-light-200/80 dark:hover:bg-dark-700 hover:bg-light-300 rounded-lg transition-colors backdrop-blur-sm"
-                title="Télécharger en Markdown"
-              >
-                <Download
-                  size={16}
-                  className="dark:text-gray-300 text-gray-600"
-                />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 dark:bg-dark-800/80 bg-light-200/80 hover:bg-red-500/20 rounded-lg transition-colors backdrop-blur-sm"
-              >
-                <X size={16} className="dark:text-gray-300 text-gray-600" />
-              </button>
-            </div>
-          </div>
-
-          {/* Title section */}
-          <div className="px-6 pb-4 -mt-8 relative">
-            <div className="flex items-start gap-4">
-              {/* Thumbnail */}
-              <div className="w-20 h-14 rounded-lg overflow-hidden border-2 dark:border-dark-800 border-light-200 shadow-lg flex-shrink-0">
-                <img
-                  src={thumbnail}
-                  alt={videoTitle}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://via.placeholder.com/80x56/1a1a1a/666?text=Video";
-                  }}
-                />
-              </div>
-
-              <div className="flex-1 min-w-0 pt-2">
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${typeConfig.color} border border-current/20`}
-                >
-                  {typeConfig.icon}
-                  {typeConfig.label}
-                </span>
-                <h2 className="text-lg font-bold dark:text-white text-gray-900 mt-2 line-clamp-2">
-                  {videoTitle}
-                </h2>
-                <div className="flex items-center gap-4 mt-1 text-sm dark:text-gray-400 text-gray-500">
-                  <span>{channelName}</span>
-                  <span className="flex items-center gap-1">
-                    <Eye size={14} />
-                    {wordCount.toLocaleString()} mots
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={14} />
-                    {readTime} min de lecture
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content with styled Markdown */}
-        <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
-          <div className="p-6">
-            <div className="analysis-markdown">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold dark:text-lime text-lime-dark mb-4 mt-6 first:mt-0 pb-2 border-b border-lime/20">
-                      {children}
-                    </h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-xl font-bold dark:text-cyan text-cyan-dark mb-3 mt-6 flex items-center gap-2">
-                      <span className="w-1 h-6 bg-cyan rounded-full" />
-                      {children}
-                    </h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-lg font-semibold dark:text-white text-gray-900 mb-2 mt-4">
-                      {children}
-                    </h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="dark:text-gray-300 text-gray-600 leading-relaxed mb-4">
-                      {children}
-                    </p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="space-y-2 mb-4 ml-1">{children}</ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="space-y-2 mb-4 ml-1 list-decimal list-inside">
-                      {children}
-                    </ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="flex items-start gap-2 dark:text-gray-300 text-gray-600">
-                      <span className="dark:text-lime text-lime-dark mt-1.5 flex-shrink-0">
-                        •
-                      </span>
-                      <span>{children}</span>
-                    </li>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold dark:text-white text-gray-900">
-                      {children}
-                    </strong>
-                  ),
-                  em: ({ children }) => (
-                    <em className="italic dark:text-cyan/90 text-cyan-dark/90">
-                      {children}
-                    </em>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-lime/50 pl-4 py-2 my-4 bg-lime/5 rounded-r-lg italic dark:text-gray-300 text-gray-600">
-                      {children}
-                    </blockquote>
-                  ),
-                  code: ({ children }) => (
-                    <code className="dark:bg-dark-700 bg-light-300 px-2 py-0.5 rounded dark:text-cyan text-cyan-dark text-sm font-mono">
-                      {children}
-                    </code>
-                  ),
-                  pre: ({ children }) => (
-                    <pre className="dark:bg-dark-800 bg-light-200 border dark:border-dark-border border-light-border rounded-lg p-4 overflow-x-auto my-4">
-                      {children}
-                    </pre>
-                  ),
-                  hr: () => (
-                    <hr className="dark:border-dark-border border-light-border my-6" />
-                  ),
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="dark:text-lime text-lime-dark hover:opacity-80 underline underline-offset-2"
-                    >
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {analysis.content}
-              </ReactMarkdown>
-            </div>
           </div>
         </div>
       </div>
@@ -831,6 +606,7 @@ interface AnalysesPageProps {
 export const AnalysesPage: React.FC<AnalysesPageProps> = ({
   searchQuery = "",
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedType, setSelectedType] = useState<ReportType>("all");
   const [groupingMode, setGroupingMode] = useState<GroupingMode>("list");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
@@ -843,6 +619,19 @@ export const AnalysesPage: React.FC<AnalysesPageProps> = ({
 
   // Ref for virtualized list container
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Handle URL parameters for deep linking to specific analysis
+  useEffect(() => {
+    const analysisId = searchParams.get("analysis");
+    if (analysisId && analyses.length > 0 && !selectedAnalysis) {
+      const targetAnalysis = analyses.find((a) => a.id === analysisId);
+      if (targetAnalysis) {
+        setSelectedAnalysis(targetAnalysis);
+        // Clear URL params after selection
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [analyses, searchParams, selectedAnalysis, setSearchParams]);
 
   // Advanced filters state
   const [filters, setFilters] = useState<FilterState>({
